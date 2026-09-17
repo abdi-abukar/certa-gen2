@@ -130,8 +130,11 @@ The home page embeds `/game/index.html?mode=firm&reduced=0` (or `reduced=1`).
 `packages/game/src/initFirm.js` owns the repeating approved village panorama and
 its separately animated character. Five landmark centers are registered to the
 artwork's walking path at 81.2% of image height. The sprite walks right, stops at
-each landmark, faces it with the existing `up-idle` frame, and continues after
-6 seconds. The panorama repeats directly without flipping landmark order.
+each landmark and faces it with the existing `up-idle` frame for six seconds.
+Tapping the character through its keyboard-accessible host button triggers one
+of five randomized upright jumps while walking or stopped, without consecutive repeats. Repeated taps while airborne are ignored;
+there are no automatic arrival tricks, flips, squash/stretch or double jumps.
+Reduced motion disables jumping and restores a grounded pose. Panel hover/focus pauses keep the panorama and stop timer frozen while allowing explicit character taps. Dialog, visibility and page-cache pauses freeze the current jump. The panorama repeats directly without flipping landmark order.
 The web host owns captions and visibility lifecycle. The built panorama
 `/game/firm-landscape.webp` is also the loading/error fallback. Character sizes
 are 64px on mobile and 88px on desktop. No financial state is represented.
@@ -139,17 +142,19 @@ are 64px on mobile and 88px on desktop. No financial state is represented.
 | Direction | Message | Payload and meaning |
 | --- | --- | --- |
 | Host → scene | `certa:firm-focus` | Integer topic `index` 0–4; show its caption |
+| Host → scene | `certa:firm-jump` | No payload; one randomized decorative hop, ignored while hard-paused/reduced/airborne |
 | Host → scene | `certa:firm-replay` | Reset the decorative tour |
 | Host → scene | `certa:firm-motion` | Boolean `reduced`; settle immediately when enabled |
-| Host → scene | `certa:pause`, `certa:resume` | Visibility lifecycle, without a visible pause button |
+| Host → scene | `certa:pause`, `certa:resume` | Visibility lifecycle; firm-mode pause may include boolean `allowJump` for panel interaction only, never dialogs or offscreen/hidden states |
 | Scene → host | `certa:firm-ready` | `count: 5` |
 | Scene → host | `certa:firm-landmarks` | Up to five `{ index, x, y }` label anchors, normalized to the viewport and checked by the host |
+| Scene → host | `certa:firm-character` | Normalized viewport `x`/`y` 0–1 and `characterHeight` greater than 0 and below .3; positions only the host tap target |
 | Scene → host | `certa:firm-moving` | Hide the caption during its quiet interval |
 | Scene → host | `certa:firm-standing` | Topic `index` 0–4, normalized viewport `x`/`y` 0–1 and `characterHeight` greater than 0 and below .3 |
 | Scene → host | `certa:firm-error` | Safe `code: "scene-unavailable"`; keep static fallback |
 
 Both ends check exact origin and parent/frame identity. Caption indices are:
-customer service, affiliates, bugs & roadmap, community, transparency. They show
+About Certa, Certa Transparency, Certa Community, Affiliates, Certa Rewards. They show
 only at the corresponding artwork landmark; detail panels hide during walking, while titles track the physical objects throughout the approach. Captions
 are descriptive previews, not links to unimplemented pages. Path coordinates wrap
 after one panorama width to keep the loop bounded. Resizing preserves the current

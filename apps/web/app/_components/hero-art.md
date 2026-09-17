@@ -55,3 +55,9 @@ The scene registers stops to landmark centers, uses `up-idle` to face the object
 and repeats the image without mirroring. The web host reuses the same built
 `/game/firm-landscape.webp` for loading/error fallback. No runtime dependency on
 the machine-local generated-image directory remains.
+
+## Panel topic icons
+
+`village-graphic.tsx` contains original code-native SVG icons for the five panel
+topics: mountain/flag, shield/check, conversation, megaphone and gift. They are keyed
+by topic rather than landmark position, and use no external icon assets.

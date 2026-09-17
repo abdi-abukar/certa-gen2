@@ -25,15 +25,17 @@ remain foundations awaiting their own scoped design work.
 
 The web home route has a large centered black title above a continuously repeating
 five-landmark village. A separate character walks the path and pauses facing each
-landmark for 12 seconds. Each stop opens a large feature panel above the village,
+landmark for 6 seconds facing it. Tap the character while walking or stopped for
+one upright jump; arrival does not trigger a jump. Reduced motion disables jumps. Each stop opens a large feature panel above the village,
 with a heading, explanation and three topic points. A pale shade covers the scene
 while the panel is visible. Desktop uses two content columns; mobile stacks them.
 
 The five topics are About Certa, Certa Transparency, Certa Community, Affiliates
-and Bugs & Roadmap. Topic buttons also expose the content with reduced motion
+and Certa Rewards. Topic buttons also expose the content with reduced motion
 or an unavailable scene. Hovering a panel or focusing its topic controls holds
-animation for reading. These are editorial introductions, not integrated support,
-affiliate or roadmap workflows. The page makes no identity or vendor reads.
+animation for reading. Each panel has one CTA to the account guide, Certa Discord or the existing weekly
+puzzle dialog. Affiliate rewards are an editorial introduction, not an activated
+affiliate workflow. The page makes no identity or vendor reads.
 
 Navigation turns white after scrolling, and the account guide remains below the
 hero. Signup and login use existing routes. The scene retains exact-origin/frame

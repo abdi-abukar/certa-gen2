@@ -151,7 +151,7 @@ Futures title, with login and signup always visible outside the menu. Mobile log
 uses an unboxed 22px sign-in icon with a 44px tap target and a “Log in” accessible label;
 desktop retains the text label. The mobile
 menu uses the three-line icon with an accessible label. The header signup button
-uses a compact 12px label and 32px visible height (30px on mobile), with its hit area extended to
+uses a compact 12px label and 32px visible height (30px on mobile with 10px horizontal padding), with its hit area extended to
 44px; its label stays on one line. Homepage and account-guide
 headings and reading text use black, overriding the forest text default locally.
 They share hover, pressed and focus behavior; chapter tabs keep content-driven
@@ -178,9 +178,23 @@ remain visible when a stop is active. On mobile, the stage can grow beyond one
 viewport so the introduction and stop details fit without overlapping or hiding
 text. The character is a separate sprite: it walks
 to the cottage, noticeboard, workbench, fountain and telescope shelter, pauses
-for 6 seconds facing each object, then continues. Titles sit above their physical landmarks during the approach and stop; the separate row of topic labels is removed. The image repeats directly
+for 6 seconds facing each object before continuing. Only tapping the character triggers one of five random upright jumps with no consecutive repeats, including while walking; no flips, scaling or double jumps. A transparent accessible button follows the sprite, supports keyboard activation and disappears under reduced motion. Panel hover/focus keeps the panorama and timer paused while explicit taps animate only the character. Dialog/offscreen/hidden pauses freeze jumps, which settle immediately under reduced motion. Titles sit above their physical landmarks during the approach and stop; the separate row of topic labels is removed. The image repeats directly
 left-to-right without mirrored landmarks. Large editorial feature panels above the village correspond to actual stops,
-with a soft black full-scene shade above the landmark labels and below the content. The headline becomes ivory while a stop is featured. Feature panels use ivory text throughout, a compact line illustration of the corresponding village landmark, a heading, a short description and working text CTAs. The About Certa stop uses a white “About Certa Futures” eyebrow, a “One account. One size.” heading, and a short introduction. Its bottom actions are a filled “Learn more” button to the account guide and an outlined “Join community” button with a Discord icon linking to https://discord.gg/certa. The Affiliates stop shares the eyebrow and button treatment, with an “Affiliates” eyebrow, “Open to all.” heading, a short description of content and referral rewards, and one “Learn more” button using the existing community destination. Stops appear in order: About Certa, Certa Transparency, Certa Community, Affiliates, then Bugs & Roadmap. Transparency uses a matching eyebrow, “Fair trading. Clear rules.” heading and one “Learn more” action intended for Live Trader Progress; it remains disabled until that destination is supplied. Other stops retain text CTAs that underline on hover and keyboard focus; bullet points are omitted. A keyboard-accessible topic selector allows direct selection even
+with a soft black full-scene shade above the landmark labels and below the content. The headline becomes ivory while a stop is featured. Feature panels use ivory text, a topic-specific line icon, a consistent eyebrow,
+a heading and a short description. Use exactly one prominent ivory CTA with forest
+text per panel, matching the inverted Get Started treatment. While the scene shade
+is active, the transparent navbar's Get Started button and both hero actions use
+the same ivory fill and forest text, including shared hover and pressed colors.
+Use a clear action label and visible focus states.
+The CTA label and arrow remain inline on mobile; the hero's two main actions share
+one row. Avoid circular frames or radial decoration around the topic icons.
+Stops appear in order: About Certa (mountain/flag), Certa Transparency (shield/check),
+Certa Community (conversation), Affiliates (megaphone), then Certa Rewards (gift).
+About opens the evaluation guide; Transparency opens Firm Rules while Live Trader
+Progress has no destination. Community and affiliate questions use the verified
+Certa Discord invite. Rewards opens the existing weekly puzzle dialog; copy must
+not promise a discount, prize reveal or ticket before its server-confirmed state.
+A keyboard-accessible topic selector allows direct selection even
 with reduced motion or an unavailable scene; keyboard focus holds the stop, and
 hovering a panel pauses the scene until pointer leave. Panel text wraps on mobile; headline sizing follows viewport width rather than viewport height. Mobile uses a 64px character; desktop uses 88px. There is
 no visible pause control. Reduced motion and offscreen/hidden pause remain.
@@ -312,3 +326,8 @@ follows the client’s mobile dismissal conventions without introducing a modal
 for navigation. Staff permissions use readable grouped controls; protected master
 status and denied/loading/unknown outcomes remain explicit. The existing admin
 system font is retained for this navigation and permissions change.
+
+The initial panorama is a preloaded static image behind the game frame. Reveal the
+hero content once the background or scene is ready, with image-error and two-second
+timeout fallbacks and a no-JavaScript text fallback. Do not gate account access on
+scene loading.

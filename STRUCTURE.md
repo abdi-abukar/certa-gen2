@@ -298,3 +298,7 @@ editor; `app/api/staff/route.ts` delegates to the server-only `staff.ts` operati
 `packages/supabase/src/staff-policy.ts` owns the public-safe permission catalog and
 master-role predicate, used by both admin UI and server authorization. There is
 no browser Auth Admin client or new staff table.
+
+The public village character’s tap-triggered decorative hop is sampled by
+`packages/game/src/firm-jumps.js`; `initFirm.js` owns their lifecycle, pause and
+reduced-motion behavior. These animations have no account or award authority.

@@ -1,4 +1,5 @@
 import kaplay from "kaplay";
+import { chooseFirmJump, sampleFirmJump } from "./firm-jumps.js";
 
 // Approved village panorama. The character is a separate sprite on its path.
 const HEIGHT = 600;
@@ -14,6 +15,7 @@ export default function initFirm() {
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let reduced = new URLSearchParams(location.search).get("reduced") === "1" || motion.matches;
   let hostPaused = false;
+  let allowPausedJump = false;
   let suspended = false;
   let disposed = false;
   let loaded = false;
@@ -21,6 +23,8 @@ export default function initFirm() {
   let nextStop = 0;
   let resting = 0;
   let standing = null;
+  let jumpElapsed = null;
+  let jump = null;
   let viewWidth = 1400;
   let mobile = false;
   let player;
@@ -33,15 +37,24 @@ export default function initFirm() {
   const emit = (type, detail = {}) => {
     if (!disposed) window.parent.postMessage({ type, ...detail }, window.location.origin);
   };
-  const updatePause = () => { k.debug.paused = hostPaused || suspended || document.hidden; };
+  const updatePause = () => { k.debug.paused = (hostPaused && !(allowPausedJump && jumpElapsed !== null)) || suspended || document.hidden; };
   const characterHeight = () => (mobile ? 64 : 88) / Math.max(1, window.innerHeight);
+  const projectPlayer = () => {
+    const sx = 800 / viewWidth;
+    const sy = 800 / HEIGHT;
+    const size = characterHeight() * HEIGHT;
+    const lift = sampleFirmJump(jump, jumpElapsed);
+    const runnerX = viewWidth * (mobile ? .5 : .4);
+    const feetY = PATH_Y - size * lift;
+    player.pos = k.vec2(runnerX * sx, feetY * sy);
+    player.scale = k.vec2(size / 16 * sx, size / 16 * sy);
+    emit("certa:firm-character", { x: mobile ? .5 : .4, y: feetY / HEIGHT, characterHeight: characterHeight() });
+  };
   const project = () => {
     const sx = 800 / viewWidth;
     const sy = 800 / HEIGHT;
     const runnerX = viewWidth * (mobile ? .5 : .4);
-    player.pos = k.vec2(runnerX * sx, PATH_Y * sy);
-    const scale = characterHeight() * HEIGHT / 16;
-    player.scale = k.vec2(scale * sx, scale * sy);
+    projectPlayer();
     // Repeat the approved left-to-right village, never mirror its landmarks.
     const offset = wrap(worldX - runnerX);
     backdrops.forEach((backdrop, index) => {
@@ -64,7 +77,7 @@ export default function initFirm() {
     standing = index;
     nextStop = (index + 1) % STOPS.length;
     resting = 6;
-    player.play("up-idle");
+    player.play(jumpElapsed !== null ? "right-idle" : "up-idle");
     project(); caption();
   };
   const layout = () => {
@@ -80,16 +93,36 @@ export default function initFirm() {
   layout();
   const setReduced = value => {
     reduced = value;
-    if (loaded) player.play(standing !== null ? "up-idle" : reduced ? "right-idle" : "right");
+    if (reduced) jumpElapsed = null;
+    updatePause();
+    if (loaded) {
+      player.play(jumpElapsed !== null ? "right-idle" : standing !== null ? "up-idle" : reduced ? "right-idle" : "right");
+      projectPlayer();
+    }
   };
   const receive = event => {
     if (event.origin !== window.location.origin || event.source !== window.parent) return;
     const data = event.data;
     if (!data || typeof data !== "object") return;
-    if (data.type === "certa:pause") { hostPaused = true; updatePause(); }
-    if (data.type === "certa:resume") { hostPaused = false; updatePause(); }
+    if (data.type === "certa:firm-jump" && loaded && !reduced && (!hostPaused || allowPausedJump) && !suspended && !document.hidden && jumpElapsed === null) {
+      jump = chooseFirmJump(jump);
+      jumpElapsed = 0;
+      player.play("right-idle");
+      updatePause();
+    }
+    if (data.type === "certa:pause") {
+      hostPaused = true;
+      allowPausedJump = data.allowJump === true;
+      updatePause();
+    }
+    if (data.type === "certa:resume") {
+      hostPaused = false;
+      allowPausedJump = false;
+      if (loaded && jumpElapsed === null && standing === null && !reduced) player.play("right");
+      updatePause();
+    }
     if (data.type === "certa:firm-motion" && typeof data.reduced === "boolean") setReduced(data.reduced);
-    if (data.type === "certa:firm-replay" && loaded) { stopAt(0); }
+    if (data.type === "certa:firm-replay" && loaded) { jumpElapsed = null; stopAt(0); updatePause(); }
     if (data.type === "certa:firm-focus" && loaded && Number.isInteger(data.index) && data.index >= 0 && data.index < STOPS.length) {
       stopAt(data.index);
     }
@@ -133,13 +166,24 @@ export default function initFirm() {
     project(); caption();
   });
   k.onUpdate(() => {
-    if (!loaded || disposed || reduced) return;
+    if (!loaded || disposed || reduced || (hostPaused && !allowPausedJump) || suspended || document.hidden) return;
     const dt = Math.min(k.dt(), .05);
+    if (jumpElapsed !== null) {
+      jumpElapsed += dt;
+      if (jumpElapsed >= jump.duration) {
+        jumpElapsed = null;
+        player.play(standing !== null ? "up-idle" : hostPaused ? "right-idle" : "right");
+        updatePause();
+      }
+      projectPlayer();
+    }
+    // An explicit tap animates only the character while the tour stays frozen.
+    if (hostPaused) return;
     if (standing !== null) {
       resting -= dt;
       if (resting > 0) return;
       standing = null;
-      player.play("right");
+      player.play(jumpElapsed !== null ? "right-idle" : "right");
       caption();
     }
     const remaining = wrap(STOPS[nextStop] * TILE_WIDTH - worldX);

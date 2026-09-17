@@ -7,6 +7,7 @@ export function useIntroJourney(paused = false) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const regionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const characterRef = useRef<HTMLButtonElement>(null);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [reduced, setReduced] = useState(false);
@@ -38,6 +39,15 @@ export function useIntroJourney(paused = false) {
       if (event.data?.type === 'certa:firm-ready' && event.data.count === 5) {
         setReady(true);
         send('certa:firm-motion', { reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+      }
+      if (event.data?.type === 'certa:firm-character'
+        && Number.isFinite(event.data.x) && event.data.x >= 0 && event.data.x <= 1
+        && Number.isFinite(event.data.y) && event.data.y >= 0 && event.data.y <= 1
+        && Number.isFinite(event.data.characterHeight) && event.data.characterHeight > 0 && event.data.characterHeight < .3) {
+        const control = characterRef.current;
+        control?.style.setProperty('--character-x', `${event.data.x * 100}%`);
+        control?.style.setProperty('--character-y', `${event.data.y * 100}%`);
+        control?.style.setProperty('--character-height', `${event.data.characterHeight * 100}%`);
       }
       if (event.data?.type === 'certa:firm-landmarks' && Array.isArray(event.data.landmarks)
         && event.data.landmarks.length <= 5 && event.data.landmarks.every((item: { index?: number; x?: number; y?: number } | null) =>
@@ -81,14 +91,26 @@ export function useIntroJourney(paused = false) {
     };
   }, []);
 
+  const syncPlayback = useCallback(() => {
+    send(visible && !hovered && !focused && !paused ? 'certa:resume' : 'certa:pause', {
+      allowJump: visible && !paused && !document.hidden,
+    });
+  }, [visible, hovered, focused, paused, send]);
+
   useEffect(() => {
-    if (ready) send(visible && !hovered && !focused && !paused ? 'certa:resume' : 'certa:pause');
-  }, [ready, visible, hovered, focused, paused, send]);
+    if (ready) syncPlayback();
+  }, [ready, syncPlayback]);
 
   const selectTopic = useCallback((index: number) => {
     setCallout({ index, x: .5, y: .812, characterHeight: .08, visible: true });
     send('certa:firm-focus', { index });
   }, [send]);
 
-  return { selectTopic, setHovered, setFocused, frameRef, regionRef, trackRef, ready, frameSource, callout, landmarks, reduced };
+  const jump = useCallback(() => {
+    if (!ready || !visible || paused || reduced || document.hidden) return;
+    syncPlayback();
+    send('certa:firm-jump');
+  }, [ready, visible, paused, reduced, syncPlayback, send]);
+
+  return { selectTopic, jump, characterRef, setHovered, setFocused, frameRef, regionRef, trackRef, ready, frameSource, callout, landmarks, reduced };
 }
