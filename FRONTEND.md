@@ -211,14 +211,18 @@ Auth dialogs set `contentSized`: desktop height comes from
 the form column, while the editorial panel fills that height and compresses its
 copy for shorter forms. There is no fixed minimum dialog height. At 700px and
 below it becomes a bottom sheet. Auth uses the optional `mobileArtwork="strip"` treatment:
-the editorial panel compresses into a short illustrated card above the sheet.
+the editorial panel becomes a short illustrated header inside the same opaque sheet, with no transparent gap.
 Other decorative panels are hidden by default. Opening takes 200ms and
 closing 160ms, with reduced motion disabling both. Use the native modal top layer
 for focus trapping and background inertness, restore focus/scroll on dismissal,
 and focus the heading initially so opening does not summon a phone keyboard.
 Inputs, selects and textareas are 16px minimum. The sheet tracks the visual
-viewport and respects bottom safe-area padding; content scrolls when space is
-limited. Never disable browser zoom.
+viewport in a full-screen native dialog shell and respects bottom safe-area padding.
+Only the inner content scrolls; the close button remains accessible. Lock both root
+and body scrolling, block single-finger scroll chaining at sheet edges, and restore
+original styles and page position on dismissal. An ivory backing fills the area below
+the visual viewport to avoid transparent keyboard/safe-area gaps. Preserve pinch zoom.
+Native iOS keyboard and toolbar behavior still requires a physical-device check.
 
 Signup, login, recovery and the weekly puzzle share this shell. Auth uses the
 existing village artwork in an editorial community panel with a brief entrance

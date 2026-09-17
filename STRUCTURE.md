@@ -38,6 +38,7 @@ certa-mono-repo/
         globals.css          Client web browser styling, including hidden scrollbars
         _components/         Introduction, navigation, account guide and scoped styles
           responsive-dialog.tsx  Reusable web modal/mobile sheet, focus/scroll/motion owner
+          dialog-scroll.ts      Gesture boundary calculations for sheet scroll containment
           auth-dialog.tsx    App-wide auth dialog provider and progressive link entry points
           fonts/             Self-hosted DM Sans Latin variable font and OFL license
           hero-art.md        Provenance and generation prompt for introduction artwork

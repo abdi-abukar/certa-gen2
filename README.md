@@ -197,6 +197,11 @@ These are implementation choices, not a claim that the project has passed a load
 
 ## Verification
 
+The shared web bottom sheet now contains scrolling within an opaque surface and
+tracks the keyboard visual viewport, with regression coverage for scroll-edge
+containment. Native iOS keyboard/accessory-toolbar behavior still needs an iPhone
+check; automated tests and a web build do not establish device compatibility.
+
 Vercel preparation (2026-09-16): environment validation/allowlists are shared by
 the launcher and web runtime startup. Local builds can run with `VERCEL=1` and
 synthetic deployment settings without reading the root `.env`. Ignore rules omit
