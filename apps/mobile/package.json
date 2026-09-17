@@ -1,0 +1,37 @@
+{
+  "name": "@certa/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "node ../../scripts/run.mjs mobile expo start",
+    "android": "node ../../scripts/run.mjs mobile expo start --android",
+    "ios": "node ../../scripts/run.mjs mobile expo start --ios",
+    "export": "node ../../scripts/run.mjs mobile expo export --platform all",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@certa/supabase": "workspace:*",
+    "@certa/api-client": "workspace:*",
+    "@supabase/supabase-js": "2.116.0",
+    "expo": "~57.0.23",
+    "expo-router": "~57.0.21",
+    "expo-constants": "~57.0.18",
+    "expo-linking": "~57.0.10",
+    "expo-secure-store": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "~0.21.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-worklets": "0.10.1",
+    "react-native-reanimated": "4.5.1"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@react-native/metro-config": "0.86.3"
+  }
+}

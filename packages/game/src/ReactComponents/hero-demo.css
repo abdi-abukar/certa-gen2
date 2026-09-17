@@ -1,0 +1,16 @@
+/* Marketing hero: hide interactive chrome, keep the climb + medal readable. */
+html.hero-mode,
+body.hero-mode {
+  background: #040a06;
+  cursor: default;
+}
+
+body.hero-mode .stage-dock,
+body.hero-mode .payout-minimum-hint,
+body.hero-mode .trader-head-actions {
+  display: none !important;
+}
+
+body.hero-mode #ui {
+  pointer-events: none;
+}

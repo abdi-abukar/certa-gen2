@@ -1,0 +1,13 @@
+{
+  "name": "@certa/tradara-service",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/run-worker.mjs",
+    "start": "node ../../scripts/run-worker.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": { "@certa/server": "workspace:*", "ws": "^8.18.0" },
+  "devDependencies": { "@types/ws": "^8.18.0" }
+}

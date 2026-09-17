@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+  - services/tradara
+  - services/contracts
+  - services/discord
+  - services/content

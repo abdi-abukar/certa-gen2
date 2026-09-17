@@ -1,0 +1,25 @@
+{
+  "name": "@certa/admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @certa/game exec vite build --outDir ../../apps/admin/public/game --emptyOutDir && node ../../scripts/run.mjs admin next dev --port 3201",
+    "build": "pnpm --filter @certa/game exec vite build --outDir ../../apps/admin/public/game --emptyOutDir && node ../../scripts/run.mjs admin next build",
+    "start": "node ../../scripts/run.mjs admin next start --port 3201",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@certa/server": "workspace:*",
+    "@certa/ui-web": "workspace:*",
+    "@supabase/supabase-js": "2.116.0",
+    "next": "16.3.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "@certa/supabase": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "~19.2.0"
+  }
+}

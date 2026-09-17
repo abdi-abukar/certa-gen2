@@ -1,0 +1,4 @@
+interface:
+  display_name: "Certa Frontend"
+  short_description: "Design and review consistent Certa interfaces"
+  default_prompt: "Use $certa-frontend to design or refine this Certa screen using the repo design principles and existing game architecture."

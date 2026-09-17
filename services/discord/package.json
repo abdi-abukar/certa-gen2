@@ -1,0 +1,1 @@
+{"name":"@certa/discord-service","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"node ../../scripts/run-worker.mjs discord","start":"node ../../scripts/run-worker.mjs discord","typecheck":"tsc --noEmit"},"dependencies":{"@certa/server":"workspace:*","ws":"^8.18.0"},"devDependencies":{"@types/ws":"^8.18.0"}}

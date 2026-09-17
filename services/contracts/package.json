@@ -1,0 +1,14 @@
+{
+  "name": "@certa/contracts-service",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/run-worker.mjs contracts",
+    "start": "node ../../scripts/run-worker.mjs contracts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@certa/server": "workspace:*"
+  }
+}

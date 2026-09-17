@@ -1,0 +1,52 @@
+{
+  "name": "@certa/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./auth": "./src/auth.ts",
+    "./supabase": "./src/supabase.ts",
+    "./proxy": "./src/proxy.ts",
+    "./api": "./src/api.ts",
+    "./actions": "./src/actions.ts",
+    "./email": "./src/email/triggers.ts",
+    "./vendors": "./src/vendors/health.ts",
+    "./tradara": "./src/tradara/http.ts",
+    "./tradara-worker": "./src/tradara/worker.ts",
+    "./contracts": "./src/contracts/http.ts",
+    "./contracts-worker": "./src/contracts/worker.ts",
+    "./payouts": "./src/payouts/http.ts",
+    "./discord": "./src/discord/http.ts",
+    "./discord-worker": "./src/discord/worker.ts",
+    "./discord-interactions": "./src/discord/interactions.ts",
+    "./content": "./src/content/http.ts",
+    "./content-render": "./src/content/render.tsx",
+    "./content-worker": "./src/content/worker.ts",
+    "./content-webhook": "./src/content/webhook.ts",
+    "./awards": "./src/awards/http.ts",
+    "./awards-worker": "./src/awards/worker.ts",
+    "./puzzle-rewards": "./src/content/puzzle-rewards.ts",
+    "./staff": "./src/staff.ts",
+    "./startup": "./src/startup.ts"
+  },
+  "dependencies": {
+    "@certa/supabase": "workspace:*",
+    "@napi-rs/canvas": "0.1.80",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.116.0",
+    "react-dom": "19.2.3",
+    "server-only": "0.0.1",
+    "sharp": "0.35.4"
+  },
+  "peerDependencies": {
+    "next": "16.3.5",
+    "react": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "19.2.7"
+  }
+}

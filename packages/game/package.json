@@ -1,0 +1,21 @@
+{
+  "name": "@certa/game",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "node --check vite.config.js"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "three": "0.185.1",
+    "jotai": "2.10.1",
+    "kaplay": "4000.0.0-alpha.10",
+    "framer-motion": "12.42.2"
+  },
+  "devDependencies": {
+    "vite": "8.3.0",
+    "@vitejs/plugin-react": "6.1.1"
+  }
+}

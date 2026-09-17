@@ -1,0 +1,15 @@
+{
+  "name": "@certa/api-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@certa/supabase": "workspace:*"
+  }
+}

@@ -1,0 +1,64 @@
+.fail-restart-hint {
+  position: absolute;
+  top: var(--hint-y);
+  left: var(--hint-x);
+  z-index: 30;
+  transform: translate(-10%, -50%);
+  pointer-events: auto;
+}
+
+.fail-restart-hint__card {
+  width: max-content;
+  max-width: min(200px, 46vw);
+  padding: 10px 12px;
+  border: 2px solid rgba(163, 49, 49, 0.55);
+  border-radius: 10px;
+  background: rgba(248, 232, 230, 0.96);
+  color: #111827;
+  font-family: "gameboy", monospace;
+  box-shadow: 4px 4px 0 rgba(17, 24, 39, 0.18);
+  animation: fail-hint-bob 2s ease-in-out infinite;
+}
+
+.fail-restart-hint__title {
+  margin: 0;
+  color: #a33131;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fail-restart-hint__copy {
+  margin: 6px 0 0;
+  font-size: 9px;
+  line-height: 1.4;
+  color: rgba(17, 24, 39, 0.72);
+}
+
+.fail-restart-hint__button {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 28px;
+  border: 2px solid rgba(17, 24, 39, 0.55);
+  background: #111827;
+  color: #f6f3e9;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.fail-restart-hint__button:hover {
+  background: #1f2937;
+}
+
+@keyframes fail-hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}

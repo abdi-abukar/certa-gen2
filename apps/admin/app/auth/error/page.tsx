@@ -1,0 +1,1 @@
+export default function AuthError() { return <section className="card"><h1>This link could not be verified</h1><p>Open the email link in the browser where you requested it, or request a new link.</p><a href="/login">Back to sign in</a></section>; }

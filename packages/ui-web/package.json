@@ -1,0 +1,25 @@
+{
+  "name": "@certa/ui-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./auth-panel": "./src/auth-panel.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0",
+    "@certa/supabase": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "~19.2.0"
+  }
+}

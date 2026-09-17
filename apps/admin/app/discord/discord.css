@@ -1,0 +1,7 @@
+.discord-console { display: grid; gap: 18px; }
+.discord-console h2 { margin: 16px 0 4px; }
+.discord-console fieldset { border: 0; padding: 0; min-width: 0; }
+.discord-console .card { margin: 16px 0; padding: 24px; }
+.discord-console select { width: 100%; padding: 12px; border: 1px solid #b8c5be; border-radius: 10px; background: white; font: inherit; }
+.discord-console pre { overflow: auto; max-height: 280px; padding: 16px; background: white; border: 1px solid #d9e0dc; border-radius: 10px; }
+.discord-console [role="status"] { margin: 0; }

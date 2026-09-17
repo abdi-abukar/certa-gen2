@@ -1,0 +1,148 @@
+.trader-head-actions {
+  position: absolute;
+  top: var(--trader-y);
+  left: var(--trader-x);
+  z-index: 24;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+  transform-origin: 50% 100%;
+  font-family: "gameboy", monospace;
+  pointer-events: auto;
+  animation: trader-action-arrive 260ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    both;
+}
+
+.trader-head-actions__panel {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: rgba(14, 27, 26, 0.94);
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 8px;
+  box-shadow: 0 7px 0 rgba(13, 24, 24, 0.28);
+  white-space: nowrap;
+}
+
+.trader-head-actions button {
+  min-width: 82px;
+  height: 30px;
+  padding: 0 10px;
+  color: #f7f5e8;
+  background: #345b52;
+  border: 0;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.trader-head-actions button:hover {
+  background: #48766b;
+}
+
+.trader-head-actions__claim {
+  color: #172521;
+  background: #e7b852;
+  box-shadow: 0 5px 0 rgba(13, 24, 24, 0.28);
+}
+
+.trader-head-actions__claim:hover {
+  background: #f6d485;
+}
+
+.trader-head-actions.is-summit .trader-head-actions__panel {
+  animation: trader-action-arrive 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.trader-head-actions button:focus-visible {
+  outline: 3px solid #f4c65d;
+  outline-offset: 3px;
+}
+
+.trader-head-actions__replay span {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 0;
+}
+
+.trader-head-actions__line {
+  width: 2px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 1px rgba(13, 24, 24, 0.16);
+  transform-origin: top;
+}
+
+.trader-head-actions.is-wiping {
+  pointer-events: none;
+  animation: trader-action-wipe 620ms cubic-bezier(0.55, 0, 0.3, 1)
+    forwards;
+}
+
+.trader-head-actions.is-wiping .trader-head-actions__line {
+  animation: trader-action-line-wipe 480ms ease-in forwards;
+}
+
+@keyframes trader-action-arrive {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 10px)) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+@keyframes trader-action-wipe {
+  0% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: translate(-50%, -100%);
+  }
+  62% {
+    opacity: 1;
+    clip-path: inset(100% 0 0 0);
+    transform: translate(-50%, calc(-100% + 28px));
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(100% 0 0 0);
+    transform: translate(-50%, calc(-100% + 28px));
+  }
+}
+
+@keyframes trader-action-line-wipe {
+  to {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .trader-head-actions {
+    top: calc(var(--mobile-game-top) + var(--trader-portrait-y));
+    left: clamp(88px, var(--trader-portrait-x), calc(100vw - 88px));
+  }
+
+  .trader-head-actions__panel {
+    gap: 4px;
+    padding: 4px;
+    border-width: 1px;
+  }
+
+  .trader-head-actions button {
+    min-width: 68px;
+    height: 26px;
+    padding: 0 7px;
+    font-size: 7px;
+  }
+
+  .trader-head-actions__line {
+    height: 18px;
+  }
+}

@@ -1,0 +1,31 @@
+.ticketSide { min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 40px 28px; background: radial-gradient(ellipse at 30% 35%, #284a35, #06130d 75%); color: #f6f3e9; }
+.ticketIntro { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; }
+.ticketIntro span:last-child { color: #b7c4b6; }
+.ticket { position: relative; border: 1px solid #d8b86d; border-radius: 12px; overflow: hidden; transform: rotate(-4deg); box-shadow: 0 20px 40px #0007; background: #123522; }
+.ticketTop { display: flex; align-items: center; gap: 10px; padding: 16px 20px; font-size: 16px; font-weight: 650; }
+.foil { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 210px; margin: 0 12px; padding: 24px; overflow: hidden; border-radius: 6px; color: #183522; background: repeating-linear-gradient(115deg, #ffffff10 0 1px, transparent 1px 5px), linear-gradient(125deg, #ac853d 0%, #f5e4ad 22%, #c3a05d 42%, #f7e8b8 61%, #c5a15b 80%, #e7d091 100%); box-shadow: inset 0 0 0 1px #fff5; }
+.foil svg { position: absolute; inset: auto 0 0; width: 100%; height: 70%; fill: none; stroke: #183522; stroke-width: 1; opacity: .2; }
+.ticketName { position: relative; font-size: clamp(32px, 4vw, 48px); line-height: 1.05; letter-spacing: -.04em; font-weight: 700; text-align: center; }
+.seal { position: relative; margin-top: 24px; padding-top: 12px; border-top: 1px solid #18352266; font-size: 14px; font-weight: 650; }
+.stub { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 16px 20px; border-top: 1px dashed #d8b86d80; font-size: 14px; line-height: 1.4; }
+.perforation { width: 58px; height: 26px; background: repeating-linear-gradient(90deg, #d8b86d 0 2px, transparent 2px 5px, #d8b86d 5px 6px, transparent 6px 9px); opacity: .65; }
+.ticketNote { max-width: 32ch; margin: 0 auto; color: #b7c4b6 !important; font-size: 14px; line-height: 1.5; text-align: center; }
+.content p { font-size: 16px; line-height: 1.5; }
+.facts { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid #70856f55; font-size: 14px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.clue { margin: 24px 0; font-weight: 650; white-space: pre-wrap; overflow-wrap: anywhere; }
+.clueImage { display: block; width: 100%; max-height: 220px; object-fit: contain; margin-top: 20px; border-radius: 6px; }
+.content label { display: block; font-size: 16px; font-weight: 650; }
+.content .hint { font-size: 14px; margin: 8px 0 12px; }
+.content input { display: block; width: 100%; min-height: 48px; margin-bottom: 16px; padding: 12px; border: 1px solid #70856f; border-radius: 6px; background: #fff; color: #06130d; font: inherit; font-size: 16px; font-weight: 650; letter-spacing: .08em; }
+.content .primary, .content .secondary { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 10px 16px; border: 1px solid #123522; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 650; text-align: center; text-decoration: none; cursor: pointer; }
+.content .primary { background: #123522; color: #f6f3e9; }
+.content .primary:hover { background: #285c3c; }
+.content .secondary { background: transparent; color: #123522; }
+.content .secondary:hover { background: #1235220d; }
+.content button:disabled { opacity: .55; cursor: default; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.feedback:empty { display: none; }
+.result { margin-top: 24px; border-left: 3px solid #70856f; padding-left: 16px; }
+.result h3 { margin: 0; font-size: 20px; }
+.timer { margin: 20px 0; font-size: 24px; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .ticket { transform: none; } }

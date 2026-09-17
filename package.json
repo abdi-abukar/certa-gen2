@@ -1,0 +1,34 @@
+{
+  "name": "certa-mono-repo",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.6.0",
+  "engines": {
+    "node": ">=22.13.0 <23"
+  },
+  "scripts": {
+    "dev:browser": "pnpm --parallel --filter @certa/web --filter @certa/admin run dev",
+    "dev:web": "pnpm --filter @certa/web dev",
+    "dev:admin": "pnpm --filter @certa/admin dev",
+    "dev:mobile": "pnpm --filter @certa/mobile dev",
+    "build": "pnpm --filter @certa/web --filter @certa/admin -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "email:preview": "node --import tsx scripts/email-preview.mts",
+    "test:http": "node tests/http-smoke.mjs",
+    "check": "pnpm test && pnpm typecheck && pnpm build",
+    "supabase:check": "node scripts/check-supabase.mjs",
+    "dev:tradara": "pnpm --filter @certa/tradara-service dev",
+    "test:tradara-db": "node scripts/test-tradara-db.mjs",
+    "dev:contracts": "pnpm --filter @certa/contracts-service dev",
+    "dev:discord": "pnpm --filter @certa/discord-service dev",
+    "dev:content": "pnpm --filter @certa/content-service dev",
+    "newsletter:preview": "node --import tsx scripts/newsletter-preview.mts",
+    "awards:import": "node --conditions=react-server --import tsx scripts/import-awards.mts"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "tsx": "^4.20.0",
+    "@types/node": "^22.0.0"
+  }
+}

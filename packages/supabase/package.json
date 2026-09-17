@@ -1,0 +1,19 @@
+{
+  "name": "@certa/supabase",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./native": "./src/native.ts",
+    "./config": "./src/config.ts",
+    "./secure-storage": "./src/secure-storage.ts",
+    "./policy": "./src/policy.ts",
+    "./staff-policy": "./src/staff-policy.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0"
+  }
+}

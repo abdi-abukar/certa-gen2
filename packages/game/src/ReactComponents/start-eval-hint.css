@@ -1,0 +1,18 @@
+.start-eval-hint__card {
+  border-color: rgba(216, 184, 109, 0.7);
+  background: rgba(246, 243, 233, 0.96);
+}
+
+.start-eval-hint__title {
+  color: #8f753e;
+}
+
+.start-eval-hint__button {
+  border-color: rgba(17, 24, 39, 0.55);
+  background: #17633a;
+  color: #f6f3e9;
+}
+
+.start-eval-hint__button:hover {
+  background: #1d7a48;
+}

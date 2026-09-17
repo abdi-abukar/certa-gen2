@@ -1,0 +1,7 @@
+.community { display: grid; gap: 18px; }
+.community fieldset { border: 0; padding: 0; min-width: 0; }
+.community .card { margin: 14px 0; padding: 24px; }
+.community label:has(input[type="checkbox"]) { display: flex; align-items: start; gap: 10px; line-height: 1.5; }
+.community input[type="checkbox"] { width: 18px; height: 18px; margin: 2px 0; flex-shrink: 0; }
+.community select { width: 100%; padding: 12px; border: 1px solid #b8c5be; border-radius: 10px; background: white; font: inherit; }
+.community small { display: block; overflow-wrap: anywhere; color: #5c6963; }

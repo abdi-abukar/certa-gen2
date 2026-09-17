@@ -1,0 +1,95 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: "gameboy";
+  src: url(/gameboy.ttf);
+}
+
+:root {
+  --width: 1920;
+  --height: 1080;
+  --font-color: #e1d8d4;
+  /* Portrait framing is bottom-anchored at view width 1000 (~half-height mountain). */
+  --mobile-game-top: max(0px, calc(100dvh - 108vw));
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  background: #171c31;
+}
+
+#game {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100vw !important;
+  height: 100dvh !important;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#ui {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--width) * 1px);
+  height: calc(var(--height) * 1px);
+  transform: scale(var(--scale, 0));
+  transform-origin: bottom left;
+  box-sizing: border-box;
+  z-index: 10;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Climb loop (?mode=climb): transparent embed, canvas fills the frame. */
+html.climb-mode,
+body.climb-mode {
+  background: transparent;
+}
+
+body.climb-mode #game {
+  position: fixed !important;
+  inset: 0;
+  width: 100vw !important;
+  height: 100dvh !important;
+  transform: none;
+}
+
+body.climb-mode #ui {
+  display: none;
+}
+
+html.customize-mode,
+body.customize-mode {
+  background: #0c1412;
+}
+
+body.customize-mode #game {
+  position: fixed !important;
+  inset: 0;
+  width: 100vw !important;
+  height: 100dvh !important;
+  transform: none;
+}
+
+body.customize-mode #ui {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  pointer-events: none;
+}
