@@ -76,7 +76,7 @@ export default function initFirm() {
     worldX = STOPS[index] * TILE_WIDTH;
     standing = index;
     nextStop = (index + 1) % STOPS.length;
-    resting = 6;
+    resting = 3;
     player.play(jumpElapsed !== null ? "right-idle" : "up-idle");
     project(); caption();
   };
@@ -187,7 +187,7 @@ export default function initFirm() {
       caption();
     }
     const remaining = wrap(STOPS[nextStop] * TILE_WIDTH - worldX);
-    const step = dt * (mobile ? 48 : 60);
+    const step = dt * (mobile ? 58 : 72);
     if (remaining <= step) { stopAt(nextStop); return; }
     worldX = wrap(worldX + step);
     project();

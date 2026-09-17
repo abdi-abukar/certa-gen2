@@ -130,7 +130,7 @@ The home page embeds `/game/index.html?mode=firm&reduced=0` (or `reduced=1`).
 `packages/game/src/initFirm.js` owns the repeating approved village panorama and
 its separately animated character. Five landmark centers are registered to the
 artwork's walking path at 81.2% of image height. The sprite walks right, stops at
-each landmark and faces it with the existing `up-idle` frame for six seconds.
+each landmark and faces it with the existing `up-idle` frame for three seconds.
 Tapping the character through its keyboard-accessible host button triggers one
 of five randomized upright jumps while walking or stopped, without consecutive repeats. Repeated taps while airborne are ignored;
 there are no automatic arrival tricks, flips, squash/stretch or double jumps.

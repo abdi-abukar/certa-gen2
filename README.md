@@ -25,7 +25,7 @@ remain foundations awaiting their own scoped design work.
 
 The web home route has a large centered black title above a continuously repeating
 five-landmark village. A separate character walks the path and pauses facing each
-landmark for 6 seconds facing it. Tap the character while walking or stopped for
+landmark for 3 seconds facing it. Tap the character while walking or stopped for
 one upright jump; arrival does not trigger a jump. Reduced motion disables jumps. Each stop opens a large feature panel above the village,
 with a heading, explanation and three topic points. A pale shade covers the scene
 while the panel is visible. Desktop uses two content columns; mobile stacks them.

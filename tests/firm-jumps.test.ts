@@ -81,7 +81,7 @@ test('paused character taps leave the world and stop timer frozen; hard pauses b
   assert.equal(k.debug.paused, true);
   assert.equal(JSON.stringify(objects.slice(0, -1).map(object => object.pos)), world);
   send('certa:resume');
-  tick(110); // 5.5 seconds: the six-second landmark timer did not run during the jump.
+  tick(50); // 2.5 seconds: the three-second landmark timer did not run during the jump.
   assert.equal(JSON.stringify(objects.slice(0, -1).map(object => object.pos)), world);
   send('certa:pause');
   send('certa:firm-jump');
