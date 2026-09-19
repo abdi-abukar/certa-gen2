@@ -1,0 +1,54 @@
+begin;
+insert into auth.users(id) values('ae000000-0000-4000-8000-000000000001'),('ae000000-0000-4000-8000-000000000002'),('ae000000-0000-4000-8000-000000000003');
+insert into public.ct_plans values('creator-eval','creator-vendor','creator-funded',true,true);
+insert into public.cm_products(id,label,price_cents,enabled) values('creator-eval','Creator evaluation',15000,true);
+insert into public.cp_affiliates(id,user_id,status) values('ae000000-0000-4000-8000-000000000002','ae000000-0000-4000-8000-000000000002','active');
+insert into public.cp_codes(user_id,code,state,application,audience_discount_bps) values('ae000000-0000-4000-8000-000000000002','CREATOR','approved','Fixture',2500);
+insert into public.cm_coupons(code,kind,value) values('LOWER','percent',10),('BETTER','percent',40);
+update public.cm_processors set enabled=true;
+do $$ declare u uuid:='ae000000-0000-4000-8000-000000000001';a_user uuid:='ae000000-0000-4000-8000-000000000002';v uuid:='ae000000-0000-4000-8000-000000000003';q jsonb;c jsonb;a jsonb;c2 jsonb;rev uuid;evidence jsonb:='{"name":"Creator Buyer","country":"CA","email":"creatorbuyer@example.test","accepted":true,"terms_version":"fixture-v1"}';begin
+ perform public.cm_creator(u,'creator',true);
+ if public.cm_creator(v) is not null then raise exception 'creator preference leaked';end if;
+ if public.cm_creator(u)->>'code'<>'CREATOR' then raise exception 'creator preference missing';end if;
+ begin perform public.cm_creator(a_user,'CREATOR',true);raise exception 'self attribution allowed';exception when raise_exception then if sqlerrm<>'invalid_affiliate' then raise;end if;end;
+ begin perform public.cm_creator(v,'INVALID',true);raise exception 'unknown creator allowed';exception when raise_exception then if sqlerrm<>'invalid_affiliate' then raise;end if;end;
+ q:=public.cm_quote(u,'creator-eval',1,null,'CREATOR','LOWER',evidence->>'email');
+ if (q->>'total_cents')::integer<>11250 or q->>'discount_kind'<>'creator' or q->>'coupon_code' is not null then raise exception 'creator did not keep better price';end if;
+ if exists(select 1 from public.cm_coupon_holds where user_id=u) or exists(select 1 from public.cm_checkouts where user_id=u) then raise exception 'preview mutated checkout';end if;
+ q:=public.cm_quote(u,'creator-eval',1,null,'CREATOR','BETTER',evidence->>'email');
+ if (q->>'total_cents')::integer<>9000 or q->>'affiliate_code'<>'CREATOR' or q->>'discount_kind'<>'coupon' then raise exception 'coupon should win without stacking';end if;
+ c:=public.cm_save(u,'creator-eval',1,null,'CREATOR','LOWER',evidence);rev:=(c->>'current_revision')::uuid;
+ c2:=public.cm_save(u,'creator-eval',1,null,'CREATOR','LOWER',evidence);
+ if c2->>'current_revision'<>c->>'current_revision' then raise exception 'identical creator cart not resumed';end if;
+ a:=public.cm_prepare(u,(c->>'id')::uuid,rev,'nmi',1);
+ perform public.cm_claim(u,(a->>'id')::uuid,1);
+ perform public.cm_creator(u,null,true);
+ -- A later staff change cannot rewrite a submitted price/attribution or strand a verified payment.
+ perform public.cm_creator_configure(a_user,'CREATOR',5000,'New future offer');
+ update public.cp_codes set state='disabled' where code='CREATOR';
+ perform public.cm_result((a->>'id')::uuid,'paid','creator-provider-paid',11250,'USD',a->>'invoice');
+ perform public.cm_result((a->>'id')::uuid,'paid','creator-provider-paid',11250,'USD',a->>'invoice');
+ if (select total_cents from public.cm_revisions where id=rev)<>11250 then raise exception 'submitted quote changed';end if;
+ if (select count(*) from public.ct_entitlements where user_id=u and origin='purchase')<>1 then raise exception 'creator fulfillment duplicated';end if;
+ if (select count(*) from public.cp_earnings where user_id=a_user)<>1 then raise exception 'commission missing or duplicated';end if;
+ update public.cp_codes set state='approved' where code='CREATOR';
+ perform public.cm_creator_configure(a_user,'CREATOR',10000,'Free creator evaluation fixture');
+ c:=public.cm_save(v,'creator-eval',1,null,'CREATOR',null,evidence||'{"email":"freecreator@example.test"}');
+ a:=public.cm_prepare(v,(c->>'id')::uuid,(c->>'current_revision')::uuid,'nmi',1);
+ perform public.cm_claim(v,(a->>'id')::uuid,1);
+ perform public.cm_result((a->>'id')::uuid,'paid','free:'||(a->>'invoice'),0,'USD',a->>'invoice');
+ if (select count(*) from public.ct_entitlements where user_id=v)<>1 then raise exception 'free creator evaluation not issued';end if;
+ -- Large allowed quantities never overflow percentage arithmetic.
+ update public.cm_products set price_cents=10000000 where id='creator-eval';
+ q:=public.cm_quote(u,'creator-eval',3,null,'CREATOR',null,evidence->>'email');
+ if (q->>'total_cents')::integer<>0 then raise exception 'large quote wrong';end if;
+end $$;
+set local role authenticated;
+do $$ begin
+ begin perform * from public.cm_creator_preferences;raise exception 'unexpected creator preference read';exception when insufficient_privilege then null;end;
+ begin perform public.cm_creator('ae000000-0000-4000-8000-000000000003','CREATOR',true);raise exception 'unexpected creator write';exception when insufficient_privilege then null;end;
+ begin perform public.cm_quote('ae000000-0000-4000-8000-000000000003','creator-eval',1);raise exception 'unexpected quote rpc';exception when insufficient_privilege then null;end;
+ begin perform public.cm_creator_configure('ae000000-0000-4000-8000-000000000003','CREATOR',10000,'Bypass');raise exception 'unexpected staff config';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+rollback;

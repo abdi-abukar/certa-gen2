@@ -18,8 +18,8 @@ mail delivery, paid generation or legacy cron cutover has been performed.
 - Puzzles stay **weekly: Sunday 17:00 America/Toronto**, through the following
   Sunday at 17:00. PostgreSQL computes both ends in civil time, including DST.
 - Puzzles use no AI. The configurable `reward_ticket_id` is the only ticket
-  definition reference an admin needs to enter. It is an opaque string, allowing
-  the ticket backend's eventual ID format.
+  collection reference an admin needs to enter. Use the UUID of an active
+  reward collection from admin `/tickets`; scheduling verifies inventory.
 - Newsletters have **no ticket fields or reward behavior**. An explicit Go live
   request publishes the issue immediately and snapshots active, consented rows
   from the existing `newsletter_subscribers` table into the delivery queue.
@@ -166,7 +166,7 @@ without environment credentials or sending anything.
     "prompt": "Your clue goes here",
     "image_id": null,
     "answer": "YOUR ANSWER",
-    "reward_ticket_id": "REPLACE_WITH_TICKET_DEFINITION_ID",
+    "reward_ticket_id": "REPLACE_WITH_REWARD_COLLECTION_UUID",
     "reward_cap": 100,
     "live_on": "2026-09-20"
   }
@@ -188,7 +188,7 @@ A missing week's puzzle returns null rather than reviving an expired drop.
 | `GET puzzles/rewards` | Only the caller's rewards and actual ticket grant status; optional validated `?puzzle_id=UUID` narrows recovery to one puzzle |
 | `GET newsletter/issues` | Public published archive, excludes cancelled issues |
 | `GET newsletter/issues/{id}/render` | Public frozen published email render; no recipient token |
-| `POST newsletter/subscribe` | Verified user's email only, `{consent:true}`; preserves suppression |
+| `POST newsletter/subscribe` | Verified user's email only, `{consent:true,email?}`; optional footer email must match the verified identity; preserves suppression |
 | `GET newsletter/unsubscribe?token=...` | Confirmation form, no mutation on GET |
 | `POST newsletter/unsubscribe?token=...` | Random 256-bit token authorizes unsubscribe; accepts RFC 8058 one-click POST without cookies/Origin |
 
@@ -197,44 +197,31 @@ transaction that increments capacity. Wrong attempts persist; duplicate correct
 submissions return the same reward even when full/closed. At capacity a new correct
 guess returns sold_out. Public/member routes cannot approve rewards or configure IDs.
 
-## Ticket agent handoff — one adapter to connect
+## Connected exact-inventory tickets
 
-**Set `reward_ticket_id` to the existing ticket definition ID in the admin input.**
-Do not introduce another prize table, inventory, scratch or random reward engine.
-Pending rewards are durable in `cn_puzzle_rewards`:
+Set `reward_ticket_id` to the UUID of an active **Weekly puzzle rewards**
+collection created in admin `/tickets`. [TICKETS.md](TICKETS.md) owns prize
+inventory, claims, scratch/reveal, checkout holds and manual fulfillment.
+Scheduling requires an active reward collection with enough remaining inventory.
 
-```ts
-import { dispatchPuzzleRewards } from '@certa/server/puzzle-rewards';
-await dispatchPuzzleRewards(async ({ userId, ticketId, idempotencyKey }) => {
-  // Replace this line with the real server-side ticket grant operation:
-  const grant = await tickets.grant({ userId, definitionId: ticketId, idempotencyKey });
-  return { grantId: grant.id };
-});
-```
+The ticket migration adds `tk_puzzle_grant`: a new `cn_puzzle_rewards` insert
+issues a real ticket and completes the reward in the same database transaction.
+The stable source is `puzzle-reward/{reward UUID}`. A depleted pool rolls the
+new reward back; it never substitutes a prize or reports fabricated issuance.
+The answer endpoint re-reads the confirmed reward, and the customer dialog links
+to `/tickets` after a real grant is confirmed.
 
-`dispatchPuzzleRewards` processes at most 50 pending rows per call. Invoke it from
-the ticket worker once the adapter exists. It is deliberately not called with a
-fake grant today. Ticket issuance must enforce a durable unique idempotency key
-`puzzle-reward/{reward UUID}`. Retry after a crash must return the same ticket grant.
-The dispatcher then calls service-only `cn_complete_reward(p_id,p_grant_id)`; this
-is idempotent for the same grant and rejects conflicting/duplicated grant IDs.
-A failed callback/persistence stops the batch and leaves pending work for retry.
-Multiple dispatchers are safe only when the ticket issuer implements that required
-deduplication. Do not turn pending into granted merely because the callback ran.
+Historical pending rewards use `dispatchPuzzleRewards(grantPuzzleTicket)` in the
+existing content worker every ten seconds. It reads at most 50 eligible entries,
+reuses the durable source key after a crash, and completes through service-only
+`cn_complete_reward`. Each failed entry receives a persisted one-minute retry
+delay, so an invalid pool does not block other rewards. No timer releases ticket
+inventory or changes the prize. No public/admin endpoint can mark rewards granted.
 
-If both systems share PostgreSQL, the strongest integration is a ticket-owned
-transaction: lock pending reward `FOR UPDATE SKIP LOCKED`, insert/get the unique
-source-key grant, then complete the reward in that same transaction. No network
-call while holding a database transaction. Add the ticket-definition eligibility
-check in the admin save/schedule operation once its catalogue contract exists;
-until then the field is validated as a nonempty opaque ID. Invalid configured IDs
-must remain visibly pending/failed, never decrement capacity and issue a substitute.
-
-Next agent tests: duplicate polling, concurrent consumers, crash after grant before
-completion, unknown ticket ID, disabled/nonrewardable definition, exhausted ticket
-inventory, and user deletion behavior. Wire the UI to `GET puzzles/rewards` and
-show pending until a real `ticket_grant_id` exists. Grant confirmation is service-only;
-no public or generic admin “mark awarded” endpoint exists.
+Tests cover grant-before-completion recovery, failure isolation, duplicate source
+keys, owner access, atomic puzzle issuance and exhausted inventory. Legacy grants
+are not automatically reissued; historical IDs require reconciliation before any
+production migration or dispatcher activation.
 
 ## Delivery evidence and recovery
 
@@ -314,8 +301,8 @@ reward-status refresh. Closing aborts outstanding browser requests and unmounts
 private state. The countdown inside a live puzzle uses its server `ends_at`; the
 hero countdown remains the next scheduled Sunday, not proof of availability.
 
-The redesigned gold foil is a ticket preview until a real reward exists. Correct
-answers remain pending until the issuer supplies `ticket_grant_id`. Scratch/prize
-reveal is not connected: the legacy ticket issuer is not imported or simulated.
+The puzzle foil represents the reward collection. Once its real ticket grant is
+confirmed, the customer opens `/tickets` to scratch or reveal the stored prize.
+The connected ticket engine is owned by the monorepo, with no legacy runtime import.
 The local current-puzzle API returned `503 content_not_configured` during this
 work; no live puzzle, production migration, ticket import or issuance was activated.

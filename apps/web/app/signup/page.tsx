@@ -1,2 +1,3 @@
-import { AuthForm } from '../auth-form';
-export default function Signup() { return <section className="card"><h1>Create your account</h1><p>Use a password of at least 12 characters.</p><AuthForm mode="signup" /><a href="/login">Already have an account? Sign in</a></section>; }
+import { AuthPage } from '../_components/auth-page';
+export const metadata = { title: 'Create your account' };
+export default function Signup() { return <section className="card"><p className="eyebrow">Certa</p><h1>Create your account.</h1><AuthPage mode="signup" /></section>; }

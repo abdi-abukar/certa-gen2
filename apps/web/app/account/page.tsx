@@ -1,6 +1,9 @@
 import { requireIdentity } from '@certa/server/auth';
-import { signOut } from '@certa/server/actions';
-export default async function Account() {
+import { Dashboard } from './dashboard';
+import { Accounts } from './accounts';
+export default async function Account({ searchParams }: { searchParams: Promise<{ account?: string; slot?: string }> }) {
   const user = await requireIdentity();
-  return <section className="card"><p className="eyebrow">Certa</p><h1>Your account</h1><p>Signed in as {user.email}</p><form action={signOut}><button>Sign out</button></form></section>;
+  const { account, slot } = await searchParams;
+  const selected = typeof account === 'string' ? account : typeof slot === 'string' ? slot : undefined;
+  return selected ? <Dashboard key={`${user.id}:${selected}`} userId={user.id} initialAccountId={selected} /> : <Accounts key={user.id} />;
 }

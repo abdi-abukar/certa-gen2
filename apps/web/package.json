@@ -14,12 +14,14 @@
   },
   "dependencies": {
     "@certa/server": "workspace:*",
+    "@certa/supabase": "workspace:*",
     "@certa/ui-web": "workspace:*",
     "@supabase/supabase-js": "2.116.0",
+    "framer-motion": "12.42.2",
+    "mediabunny": "^1.58.0",
     "next": "16.3.5",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "@certa/supabase": "workspace:*"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",

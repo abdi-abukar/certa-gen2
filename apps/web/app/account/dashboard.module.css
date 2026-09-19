@@ -1,0 +1,209 @@
+.dashboard { --paper:#faf9f5; --ink:#17221b; --muted:#68716a; --line:#dce0d7; --sage:#eef0e8; --forest:#234c35; --gold:#9d7736; color:var(--ink); min-width:0; font-weight:500; }
+.dashboard * { box-sizing:border-box; }
+.dashboard h1,.dashboard h2,.dashboard h3,.dashboard p { margin:0; }
+.dashboard a { text-decoration:none; }
+.dashboard button { font-family:inherit; }
+.dashboard :is(button,a):focus-visible { outline:2px solid var(--forest); outline-offset:4px; }
+.dashboard button:disabled { cursor:not-allowed; }
+.pageHeading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; margin-bottom:12px; }
+.pageHeading h1 { font-size:32px; line-height:1.15; letter-spacing:-1.3px; font-weight:650; }
+.headingActions { display:flex; flex-wrap:wrap; align-items:flex-start; gap:16px; max-width:100%; }
+.headingActions .terminalButton { margin-top:2px; }
+.dashboard .refreshButton { display:grid; place-items:center; background:transparent; color:var(--muted); width:44px; height:44px; padding:12px; border:0; border-radius:6px; }
+.refreshButton svg,.historyLink svg { width:20px; height:20px; }
+.dashboard .terminalButton { display:flex; gap:16px; align-items:center; color:var(--ink); font-size:14px; min-height:44px; border:1px solid var(--line); border-radius:6px; padding:10px 16px; background:transparent; font-weight:600; }
+.terminalButton:hover { background:var(--sage); }
+.accountBar { display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--line); min-height:63px; }
+.tabs { display:flex; align-items:stretch; gap:8px; overflow:auto; min-width:0; align-self:stretch; }
+.dashboard .accountTab { display:flex; align-items:center; gap:10px; min-height:56px; white-space:nowrap; padding:12px 14px; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; font-size:14px; font-weight:550; color:var(--muted); }
+.dashboard .accountTab:first-child { padding-left:0; }
+.dashboard .accountTab[aria-selected=true] { color:var(--ink); border-bottom-color:var(--forest); font-weight:650; }
+.dashboard .accountTab:hover { color:var(--ink); }
+.tabDot,.statusDot { width:6px; height:6px; background:#55765c; border-radius:50%; flex-shrink:0; }
+.tabDot[data-state=preparing],.tabDot[data-state=payment],.tabDot[data-state=compliance],.tabDot[data-state=invitation],.tabDot[data-state=reconciling] { background:#b59753; }
+.tabDot[data-state=failed],.tabDot[data-state=setup-issue],.statusDot[data-state=failed] { background:#aa5446; }
+.purchase { display:flex; flex-direction:column; align-items:stretch; gap:0; flex-shrink:0; min-width:190px; max-width:260px; }
+.accountUtilities { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.dashboard .buyButton.primaryPurchase { min-height:50px; padding:12px 24px; font-size:16px; font-weight:650; }
+.primaryPurchase svg { width:20px; height:20px; flex-shrink:0; }
+.pricingLink { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:var(--forest); font-size:13px; font-weight:600; white-space:nowrap; }
+.mobileQuick { display:none; }
+.historyLink { width:44px; height:44px; color:var(--muted); display:grid; place-items:center; }
+.dashboard .buyButton { display:inline-flex; align-items:center; justify-content:center; gap:12px; min-height:44px; padding:12px 18px; border-radius:6px; border:1px solid var(--forest); background:var(--forest); color:#fffefa; white-space:nowrap; font-size:14px; font-weight:600; line-height:1.3; box-shadow:0 2px 3px #183f2d0a; }
+.dashboard .buyButton:hover { background:#163b27; }
+.buyButton > span:first-child { font-size:20px; line-height:14px; font-weight:400; }
+.accountCount,.capacity { font-size:13px; color:var(--muted); align-self:center; }
+.capacity { display:flex; align-items:center; justify-content:center; min-height:50px; padding:10px 16px; border:1px solid var(--line); border-radius:6px; background:var(--sage); text-align:center; }
+.hero { display:grid; grid-template-columns:minmax(260px,.83fr) minmax(0,1.17fr); align-items:center; min-height:355px; position:relative; gap:0; margin-bottom:24px; padding:35px 0 12px; }
+.accountFacts { position:relative; z-index:2; padding-right:18px; }
+.accountStatus { display:flex; align-items:center; gap:9px; font-size:14px; color:var(--muted); margin-bottom:16px; }
+.accountStatus > span:first-child { color:var(--ink); font-weight:600; }
+.balance { font-size:clamp(42px,4.3vw,64px); line-height:1.08; letter-spacing:-2.8px; font-weight:650; font-variant-numeric:tabular-nums; }
+.dashboard .freshness { display:flex; flex-wrap:wrap; align-items:center; gap:7px; font-size:12px; line-height:1.5; color:var(--muted); margin-top:10px; }
+.metrics { display:flex; margin-top:30px; gap:25px; }
+.metrics > div { display:grid; gap:7px; min-width:0; }
+.metrics > div + div { padding-left:25px; border-left:1px solid var(--line); }
+.metrics span { font-size:13px; color:var(--muted); }
+.metrics strong { font-size:24px; font-weight:600; letter-spacing:-.8px; font-variant-numeric:tabular-nums; }
+.positive { color:#326846; }
+.negative { color:#a44a40; }
+.textLink,.textButton,.backLink { font-size:13px; font-weight:600; color:var(--forest); gap:10px; align-items:center; }
+.textLink:hover,.backLink:hover,.objectiveRules:hover { text-decoration:underline; text-underline-offset:4px; }
+.dashboard .textButton { display:inline-flex; padding:8px 0; border:0; background:transparent; border-radius:0; min-height:44px; }
+.dashboard .backLink { display:block; margin-bottom:14px; }
+.dashboard .openPnl { margin-top:16px; font-size:13px; color:var(--muted); }
+.openPnl b { margin-left:8px; font-weight:600; }
+.journeyColumn { align-self:stretch; display:flex; flex-direction:column; justify-content:center; min-width:0; position:relative; }
+.scene { position:relative; isolation:isolate; width:100%; height:290px; min-width:0; overflow:hidden; }
+.sceneFrame { position:absolute; inset:0; height:100%; width:100%; border:0; pointer-events:none; transition:opacity .2s; }
+.sceneFallback { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.65; }
+.sceneFade { position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,var(--paper) 0%,transparent 10%,transparent 94%,var(--paper)),linear-gradient(0deg,var(--paper) 0%,transparent 22%,transparent 80%,var(--paper) 100%); z-index:2; }
+.dashboard .journeyCaption { text-align:right; font-size:13px; color:var(--muted); position:relative; margin-top:-5px; padding-right:15px; z-index:3; }
+.journeyCaption strong { color:var(--gold); font-size:16px; font-weight:650; margin-right:4px; }
+.activityArea { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:24px; background:linear-gradient(130deg,#e9ede3,#eff1e9 72%); border-radius:10px; padding:22px; box-shadow:0 1px 0 #dce0d726; }
+.sectionHead { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:32px; margin-bottom:20px; }
+.sectionHead h2 { font-size:17px; font-weight:650; letter-spacing:-.45px; line-height:1.35; }
+.sectionHead > span { font-size:12px; color:var(--muted); white-space:nowrap; }
+.calendar { min-width:0; grid-column:1; grid-row:1; }
+.calendarControls { display:flex; align-items:center; gap:2px; }
+.dashboard .calendarControls button { color:var(--ink); background:transparent; border:0; border-radius:5px; min-width:44px; min-height:44px; padding:4px 8px; font-weight:500; font-size:24px; line-height:1; }
+.dashboard .calendarControls .todayButton { font-size:12px; padding:8px 10px; }
+.calendarControls button:hover { background:#ffffff7a; }
+.mobileControl { display:none; }
+.weekdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); color:var(--muted); font-size:11px; margin-bottom:9px; }
+.weekdays > span { padding-left:9px; }
+.calendarGrid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; }
+.dashboard .day { color:var(--ink); background:#fafaf580; padding:9px 8px; border:1px solid transparent; border-radius:4px; text-align:left; display:flex; flex-direction:column; align-items:flex-start; gap:7px; font-weight:500; min-height:70px; min-width:0; position:relative; transition:background .15s; }
+.day > span:nth-child(2) { font-size:12px; font-weight:600; white-space:nowrap; letter-spacing:-.2px; }
+.dayNumber { font-size:12px; line-height:1; }
+.day small { font-size:9px; color:var(--muted); }
+.dashboard .day[aria-pressed=true] { background:var(--forest); border-color:#c4b06f; box-shadow:0 0 0 1px #c4b06f; color:#fff; }
+.day[aria-pressed=true] span,.day[aria-pressed=true] small { color:#fff; }
+.dashboard .day:hover:not([aria-pressed=true]):not(:disabled) { background:#dde4d6; }
+.day[aria-current=date] .dayNumber { text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:2px; }
+.dashboard .outsideDay { opacity:.35; cursor:default; }
+.dashboard .calendarCaption { margin-top:12px; font-size:11px; color:var(--muted); line-height:1.5; }
+.objectives { grid-column:2; grid-row:1; border-left:1px solid #d2d9cc; padding-left:24px; min-width:0; }
+.objective { display:flex; gap:12px; padding:14px 0; align-items:center; border-top:1px solid #d7ded14d; }
+.objective > div { min-width:0; }
+.objective strong { font-size:13px; font-weight:600; }
+.dashboard .objective p { color:var(--muted); font-size:12px; line-height:1.5; margin-top:4px; }
+.objectiveDone,.objectivePending { display:grid; flex:0 0 30px; height:30px; border-radius:50%; place-items:center; }
+.objectiveDone { background:#d8e6d5; color:#3c6d43; font-size:19px; }
+.objectivePending { border:3px solid #dbd9bd; border-top-color:#b29657; }
+.complianceLink { display:flex; justify-content:space-between; padding:15px 0; color:var(--forest); border-top:1px solid var(--line); font-size:13px; font-weight:600; }
+.objectiveRules { display:inline-flex; align-items:center; gap:10px; margin-top:18px; min-height:44px; color:var(--muted); font-size:12px; }
+.tradeSection { margin-top:30px; padding:0 2px; }
+.tradeSection .sectionHead { margin-bottom:14px; }
+.tradeSection .sectionHead p { font-size:12px; color:var(--muted); margin-top:5px; }
+.tradeSection .sectionHead > strong { font-size:20px; font-weight:600; letter-spacing:-.5px; }
+.tradeTable { width:100%; border-collapse:collapse; text-align:left; font-variant-numeric:tabular-nums; }
+.tradeTable th { font-size:11px; font-weight:500; color:var(--muted); padding:10px 12px; border-bottom:1px solid var(--line); }
+.tradeTable td { padding:15px 12px; border-bottom:1px solid #e5e7df; font-size:13px; white-space:nowrap; }
+.tradeTable td b { font-weight:600; }
+.tradeTable th:first-child,.tradeTable td:first-child { padding-left:0; }
+.tradeTable th:last-child,.tradeTable td:last-child { text-align:right; padding-right:0; font-weight:600; }
+.tradeScroll { max-width:100%; overflow:auto; }
+.dashboard .noTrades,.tradeLoading { padding:30px 0; font-size:14px; color:var(--muted); border-top:1px solid var(--line); }
+.emptyHero { min-height:440px; display:grid; grid-template-columns:1fr 1.25fr; gap:16px; align-items:center; }
+.emptyCopy { z-index:3; }
+.stateLabel { font-size:13px; color:var(--muted); display:block; margin-bottom:18px; }
+.emptyCopy h2,.dashboard .stateTitle { font-size:clamp(28px,3vw,42px); letter-spacing:-1.5px; line-height:1.15; font-weight:600; max-width:420px; }
+.dashboard .emptyCopy p,.dashboard .stateBody { font-size:15px; line-height:1.7; color:var(--muted); margin-top:17px; max-width:330px; }
+.stateActions { display:flex; align-items:center; gap:18px; margin-top:26px; flex-wrap:wrap; }
+.stateHero { min-height:400px; }
+.stateHero .scene { height:310px; }
+.pendingFooter { display:flex; gap:20px; align-items:center; padding:22px 0; border-top:1px solid var(--line); font-size:13px; }
+.pendingFooter > span:first-child { font-weight:600; }
+.pendingFooter > span:nth-child(2) { color:var(--muted); }
+.pendingFooter > button { margin-left:auto; }
+.dashboard .inlineNotice { background:#f1eddf; color:#65593d; border-radius:6px; padding:12px 15px; font-size:13px; line-height:1.6; margin:16px 0; }
+.inlineNotice button { padding:0; border:0; background:transparent; color:inherit; font-weight:600; text-decoration:underline; }
+.dataNotice { font-size:12px; color:#8d5f32; margin-top:16px!important; }
+.loadingHero { min-height:355px; position:relative; padding-top:60px; }
+.skeletonText,.skeletonAmount { display:block; background:#e8ebe2; animation:pulse 1.8s ease-in-out infinite; border-radius:4px; }
+.skeletonText { width:150px; height:16px; margin-bottom:20px; }
+.skeletonAmount { width:235px; height:62px; margin-bottom:20px; max-width:100%; }
+.loadingMountain { position:absolute; right:0; top:60px; width:48%; height:210px; border-radius:50%; background:radial-gradient(ellipse,#e7ede0,transparent 65%); }
+.spinning { animation:spin 1s linear infinite; }
+.srOnly { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+.historyList { margin-top:32px; border-top:1px solid var(--line); }
+.historyRow { display:grid; grid-template-columns:1.3fr 1fr 1fr auto; align-items:center; gap:20px; padding:22px 0; border-bottom:1px solid var(--line); color:var(--ink)!important; }
+.historyRow strong { display:block; font-size:15px; font-weight:600; }
+.historyRow span { color:var(--muted); font-size:13px; }
+.historyFilters { display:flex; gap:6px; }
+.dashboard .historyFilters button { background:transparent; color:var(--muted); font-size:13px; padding:10px 16px; border-radius:6px; }
+.dashboard .historyFilters button[aria-pressed=true] { background:var(--sage); color:var(--forest); }
+@keyframes pulse { 50% { opacity:.5; } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media(min-width:1600px) { .hero { min-height:400px; } .scene { height:330px; } .activityArea { grid-template-columns:minmax(0,1fr) 300px; } .day > span:nth-child(2) { font-size:13px; } }
+@media(max-width:1150px) { .activityArea { grid-template-columns:minmax(0,1fr) 205px; gap:18px; padding:18px; } .objectives { padding-left:18px; } .metrics { gap:17px; } .metrics > div + div { padding-left:17px; } .accountBar { gap:6px; } .accountUtilities { gap:4px; } .accountTab { padding-inline:9px!important; } .accountTab:first-child { padding-left:0!important; } .day { padding-inline:5px!important; } .day > span:nth-child(2) { font-size:12px; } }
+@media(max-width:700px) {
+  .pageHeading { align-items:flex-start; gap:12px; margin-bottom:0; }
+  .pageHeading h1 { padding-top:10px; }
+  .pageHeading h1 { font-size:26px; letter-spacing:-.9px; }
+  .headingActions { gap:0; min-width:0; max-width:58%; }
+  .headingActions .terminalButton { display:none; }
+  .accountBar { min-height:56px; gap:0 12px; flex-wrap:wrap; padding-bottom:0; }
+  .tabs { flex:1 1 auto; max-width:100%; }
+  .purchase { min-width:0; max-width:190px; flex-shrink:1; }
+  .accountUtilities { margin-left:auto; gap:0; }
+  .accountUtilities .pricingLink { margin-right:8px; }
+  .pricingLink { font-size:12px; }
+  .mobileQuick { display:inline-flex; align-items:center; gap:8px; min-height:44px; margin-left:auto; color:var(--forest)!important; font-size:12px; font-weight:600; white-space:nowrap; }
+  .tabs { gap:14px; }
+  .dashboard .accountTab { font-size:13px; gap:6px; padding:10px 0!important; }
+  .tabDot { width:5px; height:5px; }
+  .accountUtilities .historyLink { display:none; }
+  .dashboard .buyButton { padding:11px 13px; gap:7px; font-size:13px; }
+  .dashboard .buyButton.primaryPurchase { min-height:48px; padding:12px 16px; font-size:14px; white-space:normal; }
+  .hero { grid-template-columns:1fr; padding-top:20px; min-height:0; margin-bottom:24px; }
+  .accountFacts { padding:0; }
+  .accountStatus { font-size:13px; margin-bottom:14px; }
+  .balance { font-size:48px; letter-spacing:-2px; }
+  .metrics { margin-top:25px; gap:28px; }
+  .metrics > div + div { padding-left:28px; }
+  .metrics strong { font-size:24px; }
+  .journeyColumn { margin-inline:-16px; margin-top:7px; }
+  .scene { height:170px; }
+  .dashboard .journeyCaption { text-align:center; padding:0; margin-top:-6px; }
+  .activityArea { display:flex; flex-direction:column; gap:24px; background:transparent; box-shadow:none; padding:0; }
+  .objectives { border:0; background:linear-gradient(115deg,#e9ede3,#f0f1e9); padding:18px; border-radius:8px; }
+  .objectives .sectionHead { margin-bottom:5px; }
+  .objective { padding:11px 0; }
+  .objectivePending,.objectiveDone { width:28px; height:28px; flex-basis:28px; }
+  .objective > div { flex:1; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .objective strong,.objective p { font-size:12px; }
+  .dashboard .objective p { margin-top:0; text-align:right; }
+  .objectiveRules { margin-top:7px; }
+  .sectionHead { margin-bottom:15px; }
+  .sectionHead h2 { font-size:16px; }
+  .calendar { padding:0 1px; }
+  .calendar .sectionHead { margin-bottom:12px; }
+  .desktopControl { display:none; }
+  .mobileControl { display:inline-block; }
+  .dashboard .hiddenWeek { display:none; }
+  .dashboard .day { padding:9px 3px!important; min-height:68px; gap:9px; }
+  .day > span:nth-child(2) { font-size:12px; letter-spacing:-.3px; }
+  .day small { display:none; }
+  .weekdays > span { padding-left:4px; }
+  .extraColumn { display:none; }
+  .tradeTable th,.tradeTable td { padding:12px 5px; font-size:12px; }
+  .tradeTable th { font-size:11px; }
+  .tradeSection { margin-top:24px; }
+  .tradeSection .sectionHead > strong { font-size:17px; }
+  .emptyHero { grid-template-columns:1fr; padding-top:38px; min-height:0; gap:20px; }
+  .emptyHero .scene { height:240px; }
+  .emptyCopy h2,.dashboard .stateTitle { font-size:34px; max-width:340px; letter-spacing:-1.1px; }
+  .stateHero .scene { height:230px; }
+  .pendingFooter { gap:10px; flex-wrap:wrap; padding:16px 0; }
+  .pendingFooter > span { font-size:12px; }
+  .pendingFooter > button { width:100%; margin-left:0; }
+  .historyRow { grid-template-columns:1fr auto; gap:8px 16px; padding:18px 0; }
+  .historyRow > span:nth-child(3) { grid-column:1; }
+  .historyRow > span:last-child { grid-row:1 / 3; grid-column:2; }
+  .historyFilters { overflow:auto; }
+  .historyFilters button { white-space:nowrap; }
+}
+@media(max-width:350px) { .pageHeading h1 { font-size:24px; } .dashboard .buyButton.primaryPurchase { padding-inline:12px; } .balance { font-size:42px; } .metrics { gap:20px; } .metrics > div + div { padding-left:20px; } .day > span:nth-child(2) { font-size:11px; } }
+@media(prefers-reduced-motion:reduce) { .dashboard *, .sceneFrame { animation:none!important; transition:none!important; } }

@@ -87,7 +87,8 @@ test('ticket handoff reuses the source key after a grant succeeds but completion
  const {dispatchPuzzleRewards}=await import('../packages/server/src/content/puzzle-rewards');
  const requests:any[]=[];const reward={id:'reward-1',user_id:'user-1',reward_ticket_id:'configured-ticket'};
  let saved=false;let fail=true;
- const query={select:()=>query,eq:()=>query,order:()=>query,limit:async()=>({data:saved?[]:[reward],error:null})};
+ const retry={eq:()=>retry,select:async()=>({data:[],error:null})};
+ const query={select:()=>query,eq:()=>query,lte:()=>query,order:()=>query,limit:async()=>({data:saved?[]:[reward],error:null}),update:()=>retry};
  const db={from:()=>query,rpc:async(name:string,args:any)=>{assert.equal(name,'cn_complete_reward');assert.equal(args.p_grant_id,'real-grant');if(fail){fail=false;return {data:null,error:{message:'network'}};}saved=true;return {data:true,error:null};}} as any;
  const grant=async(input:any)=>{requests.push(input);return {grantId:'real-grant'};};
  await assert.rejects(dispatchPuzzleRewards(grant,db));assert.equal(await dispatchPuzzleRewards(grant,db),1);assert.equal(await dispatchPuzzleRewards(grant,db),0);

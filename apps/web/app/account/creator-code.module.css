@@ -1,0 +1,24 @@
+.creator { position:relative; min-width:0; color:var(--ink); font-size:13px; }
+.creator .trigger { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:44px; padding:8px 0; border:0; border-radius:6px; color:var(--forest); background:transparent; font:inherit; font-size:12px; line-height:1.4; cursor:pointer; }
+.trigger > span { min-width:0; overflow-wrap:anywhere; }
+.trigger b { font-weight:650; }
+.trigger > svg { width:14px; height:14px; flex-shrink:0; }
+.trigger .chevron { width:12px; height:12px; transition:transform .15s; }
+.trigger[aria-expanded=true] .chevron { transform:rotate(180deg); }
+.trigger:hover:not(:disabled) { background:var(--sage); }
+.trigger:disabled { color:var(--muted); cursor:wait; }
+.panel { position:absolute; top:100%; right:0; z-index:5; width:340px; max-width:calc(100vw - 32px); padding:20px; border:1px solid var(--line); border-radius:8px; background:var(--paper); box-shadow:0 12px 36px #17221b1a; }
+.panel form { display:block; margin:0; }
+.panel label { display:block; font-size:14px; font-weight:650; }
+.panel .hint { margin:6px 0 16px; font-size:13px; line-height:1.5; color:var(--muted); }
+.entry { display:flex; align-items:stretch; gap:8px; }
+.entry input { width:100%; min-width:0; min-height:44px; margin:0; border:1px solid var(--muted); border-radius:6px; padding:10px 12px; font:inherit; font-size:16px; color:var(--ink); background:#fff; }
+.entry .save { flex-shrink:0; min-height:44px; padding:10px 14px; border:1px solid var(--forest); border-radius:6px; font:inherit; font-weight:600; color:var(--paper); background:var(--forest); cursor:pointer; }
+.save:hover:not(:disabled) { background:#163b27; }
+.saved { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; font-size:12px; color:var(--muted); }
+.saved .remove { flex-shrink:0; min-height:44px; padding:8px 0 8px 8px; border:0; font:inherit; color:var(--forest); background:transparent; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.panel .error { margin:12px 0 0; font-size:13px; line-height:1.5; color:#963e2d; }
+.panel button:disabled { opacity:.6; cursor:wait; }
+.creator :is(button,input):focus-visible { outline:2px solid var(--forest); outline-offset:3px; }
+@media(max-width:700px) { .panel { padding:16px; } .creator .trigger { font-size:11px; } }
+@media(prefers-reduced-motion:reduce) { .trigger .chevron { transition:none; } }

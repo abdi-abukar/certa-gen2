@@ -13,6 +13,7 @@ export function createHealthChecker(fetcher: typeof fetch = fetch, env = process
     const start = now();
     const result = (status: Health['status'], detail: string): Health => ({ vendor: id, status, detail, checkedAt: new Date(now()).toISOString(), latencyMs: Math.max(0, now() - start) });
     let url: string; let headers: Record<string, string>;
+    if (id === 'authnet' || id === 'nmi' || id === 'nowpayments') return result('not_configured', 'Payment adapter awaits deployment verification. Credentials stay in the web app; no payment or credential probe is performed from admin.');
     if (id === 'supabase') {
       if (!env.CERTA_SUPABASE_URL || !env.CERTA_SUPABASE_PUBLISHABLE_KEY) return result('not_configured', 'Project configuration is missing.');
       url = new URL('/auth/v1/settings', env.CERTA_SUPABASE_URL).href;

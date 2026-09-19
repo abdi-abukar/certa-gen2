@@ -12,11 +12,20 @@ const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256
 const kid = randomUUID();
 const jwk = { ...publicKey.export({ format: 'jwk' }), kid, alg: 'ES256', use: 'sig' };
 const trader = { id: randomUUID(), email: 'trader@example.test', app_metadata: {}, user_metadata: { role: 'admin' }, aud: 'authenticated', created_at: new Date().toISOString() };
-const staff = { ...trader, id: randomUUID(), email: 'staff@example.test', app_metadata: { role: 'certa_admin' }, user_metadata: {} };
+const staff = { ...trader, id: randomUUID(), email: 'staff@example.test', app_metadata: { role: 'certa_admin', certa_pages: [] }, user_metadata: {} };
 const users = new Map([trader, staff].map(user => [user.id, user]));
+const newsletterSubscriptions = [];
+let newsletterSuppressed = false;
 const tokens = new Map();
+const supportLinks = new Map();
+let supportVerifications = 0;
+const unverifiedCustomers = new Set();
+const createdCustomers = [];
+let signupClaims = 0;
+const grantedSessions = [];
 let authOrigin;
 let refreshes = 0;
+let profileStatsMode = 'available';
 const tradingAccounts = [
   { id: randomUUID(), user_id: trader.id, vendor_id: 'vendor-trader', firm_id: 'fixture-firm', lifecycle: 'active', kind: 'evaluation' },
   { id: randomUUID(), user_id: staff.id, vendor_id: 'vendor-staff', firm_id: 'fixture-firm', lifecycle: 'active', kind: 'evaluation' },
@@ -33,36 +42,78 @@ const discordLinks=[trader,staff].map((user,index)=>({user_id:user.id,discord_id
 const discordSigning=generateKeyPairSync('ed25519');
 const discordPublic=discordSigning.publicKey.export({format:'der',type:'spki'}).subarray(-32).toString('hex');
 
-function session(user, expired = false) {
+function session(user, expired = false, sessionId = user.id) {
   const now = Math.floor(Date.now() / 1000);
-  const payload = { iss: `${authOrigin}/auth/v1`, sub: user.id, aud: 'authenticated', role: 'authenticated', email: user.email, app_metadata: user.app_metadata, aal: 'aal1', iat: now - (expired ? 7200 : 0), exp: now + (expired ? -3600 : 3600) };
+  const payload = { session_id: sessionId, iss: `${authOrigin}/auth/v1`, sub: user.id, aud: 'authenticated', role: 'authenticated', email: user.email, app_metadata: user.app_metadata, aal: 'aal1', iat: now - (expired ? 7200 : 0), exp: now + (expired ? -3600 : 3600) };
   const encoded = [ { alg: 'ES256', kid, typ: 'JWT' }, payload ].map(value => Buffer.from(JSON.stringify(value)).toString('base64url')).join('.');
   const access_token = `${encoded}.${sign('sha256', Buffer.from(encoded), { key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
   tokens.set(access_token, user.id);
   return { access_token, refresh_token: `fixture-refresh-${user.id}`, expires_in: expired ? -3600 : 3600, expires_at: payload.exp, token_type: 'bearer', user };
 }
+let authRequests = 0;
 const auth = createServer(async (request, response) => {
   const url = new URL(request.url, authOrigin ?? 'http://localhost');
+  if (url.pathname.startsWith('/auth/v1/')) authRequests++;
   response.setHeader('Content-Type', 'application/json');
   const send = (status, body) => { response.statusCode = status; response.end(JSON.stringify(body)); };
+  if (url.pathname === '/auth/v1/admin/generate_link') {
+    if(request.headers.apikey !== 'fixture-server-secret') return send(401,{message:'Invalid key'});
+    let raw='';for await(const chunk of request)raw+=chunk;const body=JSON.parse(raw);
+    const user=[...users.values()].find(user=>user.email===body.email);
+    if(!user)return send(404,{message:'Not found'});
+    const hash=randomUUID().replaceAll('-','').repeat(2);supportLinks.set(hash,user.id);
+    return send(200,{...user,hashed_token:hash,action_link:'https://unused.example.test',verification_type:'magiclink',email_otp:'123456',redirect_to:''});
+  }
+  if (url.pathname === '/auth/v1/verify') {
+    let raw='';for await(const chunk of request)raw+=chunk;const body=JSON.parse(raw);
+    const id=supportLinks.get(body.token_hash);if(!id)return send(403,{error_code:'otp_expired',msg:'Invalid or used link'});
+    supportLinks.delete(body.token_hash);supportVerifications++;
+    return send(200,session(users.get(id),false,randomUUID()));
+  }
   if (url.pathname.startsWith('/auth/v1/admin/users')) {
     if(request.headers.apikey !== 'fixture-server-secret') return send(401,{message:'Invalid key'});
     const id=url.pathname.split('/')[5];
-    if(!id) return send(200,{users:[...users.values()],aud:'authenticated'});
+    if(!id && request.method==='POST') {
+      let raw='';for await(const chunk of request)raw+=chunk;const body=JSON.parse(raw);
+      if([...users.values()].some(user=>user.email===body.email)) return send(422,{code:422,msg:'A user with this email address has already been registered'});
+      const created={id:randomUUID(),email:body.email,app_metadata:{provider:'email'},user_metadata:body.user_metadata??{},aud:'authenticated',email_confirmed_at:body.email_confirm?new Date().toISOString():null,created_at:new Date().toISOString()};
+      users.set(created.id,created);createdCustomers.push(created);return send(200,created);
+    }
+    if(!id) { const filter=(url.searchParams.get('filter')??'').toLowerCase();const page=Number(url.searchParams.get('page')||1),size=Number(url.searchParams.get('per_page')||50);return send(200,{users:[...users.values()].filter(user=>user.email.toLowerCase().includes(filter)).slice((page-1)*size,page*size),aud:'authenticated'}); }
+    if(request.method==='DELETE'){users.delete(id);return send(200,{});}
     const found=users.get(id); if(!found)return send(404,{message:'Not found'});
     if(request.method==='PUT') {
       let raw='';for await(const chunk of request)raw+=chunk;
-      const body=JSON.parse(raw);const updated={...found,app_metadata:body.app_metadata,updated_at:new Date().toISOString()};users.set(id,updated);return send(200,updated);
+      const body=JSON.parse(raw);const updated={...found,...(body.app_metadata?{app_metadata:body.app_metadata}:{}),...(body.user_metadata?{user_metadata:body.user_metadata}:{}),updated_at:new Date().toISOString()};users.set(id,updated);return send(200,updated);
     }
     return send(200,found);
   }
   if (url.pathname.startsWith('/rest/v1/')) {
     if (request.headers.apikey !== 'fixture-server-secret') return send(401, { message: 'Invalid fixture key' });
+    if(url.pathname==='/rest/v1/rpc/work_staff_lookup') return send(200,[...users.values()].filter(user=>['admin','certa_admin','super_admin'].includes(user.app_metadata?.role)||user.app_metadata?.certa_admin===true).map(user=>({id:user.id,email:user.email,app_metadata:Object.fromEntries(Object.entries(user.app_metadata).reverse())})));
+    if(['/rest/v1/trader_usernames','/rest/v1/compliance_profiles'].includes(url.pathname)) {
+      const id=url.searchParams.get('user_id')?.replace(/^eq\./,'');
+      if(!users.has(id))return send(406,{message:'Unknown owner'});
+      const result=url.pathname.endsWith('trader_usernames')?{username:id===trader.id?'realtrader':'realstaff'}:{kyc_status:id===trader.id?'approved':'review',sanctions_status:'approved',private_document:'NEVER_EXPOSE'};
+      return send(200,result);
+    }
+    if(url.pathname==='/rest/v1/rpc/cf_verified') { let raw='';for await(const chunk of request)raw+=chunk;const input=JSON.parse(raw);return send(200,!unverifiedCustomers.has(input.p_user)); }
+    if(url.pathname==='/rest/v1/rpc/cf_clear') return send(200,null);
+    if(url.pathname==='/rest/v1/rpc/cu_username_available') return send(200,true);
+    if(url.pathname==='/rest/v1/rpc/cu_signup_claim') { signupClaims++; return send(200,true); }
+    if(url.pathname==='/rest/v1/rpc/cu_register') return send(200,{state:'registered'});
+    if(url.pathname==='/rest/v1/rpc/cu_grant_session') { let raw='';for await(const chunk of request)raw+=chunk;const input=JSON.parse(raw);grantedSessions.push(input);return send(200,null); }
+    if(url.pathname.startsWith('/rest/v1/rpc/cu_')) return send(500,{message:'unexpected signup fixture call'});
     if(url.pathname==='/rest/v1/ca_issues'){let rows=awardIssues;for(const field of ['user_id','id'])if(url.searchParams.has(field))rows=rows.filter(r=>r[field]===url.searchParams.get(field).slice(3));if(request.headers.accept?.includes('vnd.pgrst.object'))return rows.length?send(200,rows[0]):send(406,{message:'not found'});return send(200,rows);}
     if(url.pathname==='/rest/v1/ca_renders'||url.pathname==='/rest/v1/ca_templates'||url.pathname==='/rest/v1/ca_catalog')return send(200,[]);
     if(url.pathname.startsWith('/rest/v1/rpc/ca_'))return send(200,true);
     if(url.pathname==='/rest/v1/cn_puzzle_rewards'){let rows=contentRewards; for(const field of ['user_id','puzzle_id'])if(url.searchParams.has(field))rows=rows.filter(r=>r[field]===url.searchParams.get(field).slice(3));return send(200,rows);}
     if(url.pathname==='/rest/v1/cn_issues'||url.pathname==='/rest/v1/cn_puzzles')return send(200,[]);
+    if(url.pathname==='/rest/v1/rpc/cn_subscribe') {
+      let raw='';for await(const chunk of request)raw+=chunk;
+      if(newsletterSuppressed)return send(409,{message:'suppressed'});
+      newsletterSubscriptions.push(JSON.parse(raw).p_email);return send(200,null);
+    }
     if(url.pathname==='/rest/v1/cd_links') {
       let rows=discordLinks;for(const field of ['user_id','discord_id'])if(url.searchParams.has(field))rows=rows.filter(row=>row[field]===url.searchParams.get(field).slice(3));
       const fields=url.searchParams.get('select');if(fields&&fields!=='*')rows=rows.map(row=>Object.fromEntries(fields.split(',').map(field=>[field,row[field]])));return send(200,rows);
@@ -98,6 +149,13 @@ const auth = createServer(async (request, response) => {
       for (const field of ['id', 'user_id']) if (url.searchParams.has(field)) rows = rows.filter(row => row[field] === url.searchParams.get(field).slice(3));
       return send(200, rows);
     }
+    if(url.pathname==='/rest/v1/ct_records' && url.searchParams.has('ct_accounts.user_id')) {
+      if(profileStatsMode==='error')return send(503,{message:'Snapshot unavailable'});
+      const owner=url.searchParams.get('ct_accounts.user_id').slice(3);const account=url.searchParams.get('account_id')?.slice(3);
+      if(!tradingAccounts.some(row=>row.id===account&&row.user_id===owner))return send(200,[]);
+      if(profileStatsMode==='missing')return send(200,[]);
+      return send(200,[{data:{total_net_pnl:profileStatsMode==='invalid'?'':profileStatsMode==='zero'?'0':owner===trader.id?'1240.50':'-85.25',private_metadata:'NEVER_EXPOSE'},vendor_updated_at:'2026-09-19T12:00:00Z'}]);
+    }
     if (url.pathname === '/rest/v1/ct_memberships' || url.pathname === '/rest/v1/ct_records') return send(200, []);
     if (url.pathname === '/rest/v1/rpc/ct_enqueue') {
       let raw = ''; for await (const chunk of request) raw += chunk;
@@ -120,7 +178,7 @@ const auth = createServer(async (request, response) => {
   if (url.pathname.endsWith('/token')) {
     let raw = ''; for await (const chunk of request) raw += chunk;
     const body = JSON.parse(raw || '{}');
-    const user = body.refresh_token ? users.get(body.refresh_token.replace('fixture-refresh-', '')) : [...users.values()].find(user => user.email === body.email && body.password === 'fixture-password');
+    const user = body.refresh_token ? users.get(body.refresh_token.replace('fixture-refresh-', '')) : [...users.values()].find(user => user.email === body.email && (body.password === 'fixture-password' || createdCustomers.some(created => created.id === user.id && body.password === 'a-brand-new-password')));
     if (body.refresh_token) refreshes++;
     return user ? send(200, session(user)) : send(400, { error_code: 'invalid_credentials', msg: 'Invalid credentials' });
   }
@@ -172,7 +230,7 @@ try {
   auth.listen(0, '127.0.0.1'); await once(auth, 'listening');
   authOrigin = `http://127.0.0.1:${auth.address().port}`;
   const webPort = await freePort(); const adminPort = await freePort();
-  const settings = { NEWSLETTER_POSTAL_ADDRESS:'100 Synthetic Street',PUZZLE_ANSWER_KEY:'synthetic-fixture-key-32-characters', DISCORD_CLIENT_ID:'345678901234567890',DISCORD_GUILD_ID:'456789012345678901',DISCORD_PUBLIC_KEY:discordPublic, DOCUSEAL_WEBHOOK_SECRET: 'fixture-docuseal-secret', VERIFF_API_KEY: 'fixture-veriff-key', VERIFF_SHARED_SECRET: 'fixture-veriff-secret', SUPABASE_SECRET_KEY: 'fixture-server-secret', TRADARA_FIRM_ID: 'fixture-firm', TRADARA_WEBHOOK_SECRET: 'fixture-webhook-secret', SUPABASE_URL: authOrigin, SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local_fixture_only', WEB_ORIGIN: `http://127.0.0.1:${webPort}`, ADMIN_ORIGIN: `http://127.0.0.1:${adminPort}`, API_ORIGIN: `http://127.0.0.1:${webPort}` };
+  const settings = { CERTA_AUTH_CHALLENGE_SECRET:'synthetic-challenge-secret-for-smoke-tests', NEWSLETTER_POSTAL_ADDRESS:'100 Synthetic Street',PUZZLE_ANSWER_KEY:'synthetic-fixture-key-32-characters', DISCORD_CLIENT_ID:'345678901234567890',DISCORD_GUILD_ID:'456789012345678901',DISCORD_PUBLIC_KEY:discordPublic, DOCUSEAL_WEBHOOK_SECRET: 'fixture-docuseal-secret', VERIFF_API_KEY: 'fixture-veriff-key', VERIFF_SHARED_SECRET: 'fixture-veriff-secret', SUPABASE_SECRET_KEY: 'fixture-server-secret', TRADARA_FIRM_ID: 'fixture-firm', TRADARA_WEBHOOK_SECRET: 'fixture-webhook-secret', SUPABASE_URL: authOrigin, SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local_fixture_only', WEB_ORIGIN: `http://127.0.0.1:${webPort}`, ADMIN_ORIGIN: `http://127.0.0.1:${adminPort}`, API_ORIGIN: `http://127.0.0.1:${webPort}` };
   const web = await start('web', webPort, settings); const admin = await start('admin', adminPort, settings);
   for (const origin of [web, admin]) {
     const response = await fetch(`${origin}/account`, { redirect: 'manual' });
@@ -180,12 +238,54 @@ try {
     assert.match(response.headers.get('cache-control'), /no-store/);
     const login = await fetch(`${origin}/login`); const html = await login.text();
     const nonce = login.headers.get('content-security-policy').match(/'nonce-([^']+)'/)[1];
+    assert.match(login.headers.get('content-security-policy'), origin === web ? /media-src 'self' blob:/ : /media-src 'self';/, 'local clip playback is allowed only in the customer web app');
     assert.ok(html.includes(`nonce="${nonce}"`));
     assert.equal(login.headers.get('x-frame-options'), 'DENY');
   }
   console.log('PASS: protected routes redirect guests; CSP nonces and no-store headers are present.');
+  {
+    const html = await (await fetch(`${web}/login`)).text();
+    assert.match(html, /<link rel="icon" href="\/favicon\.ico[^"]*" sizes="256x256"/, 'web favicon missing');
+    assert.match(html, /rel="apple-touch-icon"/, 'web apple icon missing');
+    assert.match(html, new RegExp(`property="og:image" content="${web}/opengraph-image`), 'absolute Open Graph image missing');
+    assert.match(html, /name="twitter:card" content="summary_large_image"/, 'twitter card missing');
+    assert.match(html, /<title>Sign in \| Certa Futures<\/title>/, 'title template missing');
+    assert.ok(html.includes('certa-crest.png') && html.includes('Certa Futures</span>'), 'header brand missing');
+    const staff = await (await fetch(`${admin}/login`)).text();
+    assert.match(staff, /<link rel="icon" href="\/favicon\.ico[^"]*"/, 'admin favicon missing');
+    assert.ok(staff.includes('certa-crest.png'), 'admin header brand missing');
+    for (const path of ['/favicon.ico', '/apple-icon.png', '/opengraph-image.png']) assert.equal((await fetch(`${web}${path}`)).status, 200, `${path} not served`);
+    console.log('PASS: favicon, Apple icon, Open Graph/Twitter card and crest header render on web and admin.');
+  }
 
   const value = session(trader);
+  {
+    const header = async (sessionCookie) => {
+      const response = await fetch(web, { headers: sessionCookie ? { Cookie: sessionCookie } : {} });
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get('cache-control'), /no-store/);
+      const html = await response.text();
+      return html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
+    };
+    const beforeGuest = authRequests;
+    const guest = await header(null);
+    assert.equal(authRequests, beforeGuest, 'public visitors should not trigger an auth lookup');
+    assert.match(guest, /Log In/); assert.match(guest, /Get Started/); assert.doesNotMatch(guest, />Dashboard</);
+    const signedIn = await header(cookie('web', value));
+    assert.match(signedIn, /href="\/account"[^>]*>Dashboard<\/a>/);
+    assert.doesNotMatch(signedIn, /Log In|Get Started/);
+    const fullHome=await (await fetch(web+'/',{headers:{Cookie:cookie('web',value)}})).text();
+    assert.doesNotMatch(fullHome,/Get started \(Free\)/);
+    assert.equal((fullHome.match(/>Dashboard</g)??[]).length,2);
+    unverifiedCustomers.add(trader.id);
+    assert.match(await header(cookie('web',value)), /Log In/);
+    assert.doesNotMatch(await header(cookie('web',value)), />Dashboard</);
+    unverifiedCustomers.delete(trader.id);
+    const invalid = await header('certa-web-auth=not-a-session');
+    assert.match(invalid, /Log In/); assert.doesNotMatch(invalid, />Dashboard</);
+    assert.match(await header(null), /Log In/, 'a signed-in render must not leak into the next guest request');
+    console.log('PASS: homepage header shows Dashboard only for server-validated sessions; guest and invalid sessions keep login/signup.');
+  }
   for (const token of [null, 'not-a-jwt', `${value.access_token.slice(0, -8)}tampered`]) {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     assert.equal((await fetch(`${web}/api/me`, { headers })).status, 401);
@@ -197,13 +297,114 @@ try {
   assert.equal(preflight.status, 204); assert.equal(preflight.headers.get('access-control-allow-origin'), settings.ADMIN_ORIGIN);
   assert.equal((await fetch(`${web}/api/me`, { method: 'OPTIONS', headers: { Origin: 'http://localhost:3202' } })).status, 403);
   console.log('PASS: API validates signed JWTs, rejects missing/tampered tokens, and restricts browser origins.');
+  unverifiedCustomers.add(trader.id);
+  for (const path of ['/api/me','/api/trading/accounts','/api/payouts/summary','/api/awards/issues','/api/content/puzzles/rewards','/api/commerce/current','/api/tickets/mine']) {
+    const denied = await fetch(`${web}${path}`, { headers: { Authorization: `Bearer ${value.access_token}` } });
+    assert.equal(denied.status,403,`Unverified customer reached ${path}`);
+    assert.equal((await denied.json()).error,'second_factor_required');
+  }
+  const verificationStatus=await fetch(`${web}/api/auth/second-factor/status`, {headers:{Authorization:`Bearer ${value.access_token}`}});
+  assert.equal(verificationStatus.status,200);assert.equal((await verificationStatus.json()).verified,false);
+  const pendingAccount=await fetch(`${web}/account`, {headers:{Cookie:cookie('web',value)},redirect:'manual'});
+  assert.equal(new URL(pendingAccount.headers.get('location'),web).pathname,'/login');
+  const legacyVerify=await fetch(`${web}/verify`, {headers:{Cookie:cookie('web',value)},redirect:'manual'});
+  assert.equal(new URL(legacyVerify.headers.get('location'),web).pathname,'/login');
+  const inactiveSend=await fetch(`${web}/api/auth/second-factor/email/send`, {method:'POST',headers:{Authorization:`Bearer ${value.access_token}`,'Content-Type':'application/json'},body:'{}'});
+  assert.equal(inactiveSend.status,503);assert.equal((await inactiveSend.json()).error,'email_delivery_disabled');
+  unverifiedCustomers.delete(trader.id);
+  for(const path of ['/verify','/login']) {const completed=await fetch(web+path,{headers:{Cookie:cookie('web',value)},redirect:'manual'});assert.equal(new URL(completed.headers.get('location'),web).pathname,'/account');}
+  console.log('PASS: password-only sessions cannot access customer data; verification screen remains reachable and disabled email delivery fails closed.');
+  {
+    const origin = { Origin: web, 'Content-Type': 'application/json' };
+    const post = (path, body, headers = origin) => fetch(`${web}/api/auth/signup/${path}`, { method: 'POST', headers, body: JSON.stringify(body) });
+    let response = await fetch(`${web}/api/auth/signup/username?username=certa`); assert.equal(response.status, 200); assert.equal((await response.json()).available, false);
+    response = await fetch(`${web}/api/auth/signup/username?username=newtrader`); assert.deepEqual(await response.json(), { available: true, username: 'newtrader' });
+    response = await post('email/send', { email: 'newtrader@example.test' }); assert.equal(response.status, 503); assert.equal((await response.json()).error, 'email_delivery_disabled');
+    const account = { firstName: 'New', lastName: 'Trader', username: 'newtrader', country: 'CA', email: 'newtrader@example.test', password: 'a-brand-new-password', acceptedTerms: true, challengeId: randomUUID(), proof: 'p'.repeat(64) };
+    assert.equal((await post('create', account, { 'Content-Type': 'application/json' })).status, 403, 'cross-site account creation must be refused');
+    assert.equal((await fetch(`${admin}/api/auth/signup/username?username=newtrader`)).status, 404, 'admin app does not register customers');
+    response = await post('create', account); const createdBody = await response.text(); assert.equal(response.status, 200, createdBody);
+    assert.deepEqual(JSON.parse(createdBody), { created: true, signedIn: true, next: '/account' });
+    const created = createdCustomers.find(user => user.email === 'newtrader@example.test');
+    assert.ok(created?.email_confirmed_at, 'proven mailbox creates a confirmed account'); assert.equal(created.user_metadata.username, 'newtrader'); assert.equal(signupClaims, 1);
+    assert.deepEqual(grantedSessions.map(input => [input.p_user, input.p_email]), [[created.id, 'newtrader@example.test']]);
+    const jar = response.headers.getSetCookie().map(value => value.split(';')[0]); assert.ok(jar.some(value => value.startsWith('certa-web-auth')), 'signup sets the HttpOnly web session');
+    const landed = await fetch(`${web}/account`, { headers: { Cookie: jar.join('; ') }, redirect: 'manual' });
+    assert.equal(landed.status, 200, 'the new trader reaches the account without a second challenge'); assert.ok((await landed.text()).includes('newtrader@example.test'));
+    response = await post('create', account); assert.equal(response.status, 409); assert.equal((await response.json()).error, 'account_exists');
+    console.log('PASS: same-origin signup proves the mailbox, creates a confirmed account with a profile, signs the browser in and reaches the account.');
+  }
+
 
   const denied = await fetch(`${admin}/account`, { headers: { Cookie: cookie('admin', value) }, redirect: 'manual' });
   assert.equal(new URL(denied.headers.get('location'), admin).pathname, '/forbidden');
   const staffSession = session(staff);
   {
+    const operator={...staff,id:randomUUID(),email:'support@example.test',app_metadata:{role:'certa_admin',support_permissions:['support:read','support:login']},email_confirmed_at:new Date().toISOString()};
+    const customer={...trader,id:randomUUID(),email:'support-customer@example.test',email_confirmed_at:new Date().toISOString()};
+    users.set(operator.id,operator);users.set(customer.id,customer);unverifiedCustomers.add(customer.id);
+    const operatorCookie=cookie('admin',session(operator));
+    const create=(userId,headers={Cookie:operatorCookie,Origin:admin,'Content-Type':'application/json'})=>fetch(admin+'/api/traders',{method:'POST',headers,body:JSON.stringify({userId})});
+    assert.equal((await fetch(admin+'/api/traders')).status,401);
+    assert.equal((await fetch(admin+'/api/traders',{headers:{Cookie:cookie('admin',value)}})).status,403);
+    assert.equal((await create(customer.id,{Cookie:cookie('admin',staffSession),Origin:admin,'Content-Type':'application/json'})).status,403);
+    assert.equal((await create(customer.id,{Cookie:operatorCookie,Origin:'https://evil.example','Content-Type':'application/json'})).status,403);
+    assert.equal((await create(operator.id)).status,403);
+    assert.equal((await create(trader.id)).status,403,'unconfirmed accounts are not magic-link confirmed');
+    const directory=await fetch(admin+'/api/traders?q=support-customer',{headers:{Cookie:operatorCookie}});assert.equal(directory.status,200);const listed=await directory.json();assert.deepEqual(listed.items.map(user=>user.id),[customer.id]);assert.equal(JSON.stringify(listed).includes('app_metadata'),false);
+    const made=await create(customer.id);assert.equal(made.status,200);const link=await made.json();const address=new URL(link.url);assert.equal(address.origin,web);assert.equal(address.search,'');assert.ok(address.hash.length>80);
+    const redeem=(token,sessionCookie)=>fetch(web+'/api/auth/support',{method:'POST',headers:{Origin:web,'Content-Type':'application/json',...(sessionCookie?{Cookie:sessionCookie}:{})},body:JSON.stringify({token})});
+    const grant=address.hash.slice(1);
+    assert.equal((await redeem(grant,cookie('web',value))).status,409,'normal customer sessions must not be replaced');assert.equal(supportVerifications,0);
+    assert.equal((await redeem(grant.slice(0,20)+'x'+grant.slice(21))).status,403);
+    const loggedIn=await redeem(grant);assert.equal(loggedIn.status,200);assert.deepEqual(await loggedIn.json(),{next:'/account'});
+    const supportCookies=loggedIn.headers.getSetCookie();assert.ok(supportCookies.some(value=>value.startsWith('certa-web-support=')&&value.includes('HttpOnly')));assert.ok(supportCookies.every(value=>!value.startsWith('certa-admin-auth')));
+    const supportJar=supportCookies.map(value=>value.split(';')[0]).join('; ');
+    assert.equal((await fetch(web+'/account',{headers:{Cookie:supportJar},redirect:'manual'})).status,200,'support session reaches protected account without changing MFA evidence');
+    assert.equal((await fetch(web+'/api/auth/second-factor/totp/enroll',{method:'POST',headers:{Cookie:supportJar,Origin:web,'Content-Type':'application/json'},body:'{}'})).status,403);
+    assert.equal((await redeem(grant)).status,403,'link is single use');
+    const otherJar=supportCookies.filter(value=>value.startsWith('certa-web-support=')).map(value=>value.split(';')[0]).join('; ')+'; '+cookie('web',value);
+    assert.equal((await fetch(web+'/account',{headers:{Cookie:otherJar},redirect:'manual'})).status,307,'proof cannot authorize a different user/session');
+    const pending=await (await create(customer.id)).json();users.set(operator.id,{...operator,app_metadata:{role:'certa_admin',support_permissions:['support:read']}});
+    assert.equal((await redeem(new URL(pending.url).hash.slice(1))).status,403,'permission revocation blocks outstanding links');
+    assert.equal((await fetch(web+'/account',{headers:{Cookie:supportJar},redirect:'manual'})).status,307,'permission revocation ends existing support access');
+    assert.equal((await create(customer.id)).status,403,'read-only support cannot create links');
+    users.delete(operator.id);users.delete(customer.id);unverifiedCustomers.delete(customer.id);
+    console.log('PASS: trader search, support permissions, private-window isolation, single-use link, session binding, MFA protection and fresh revocation.');
+  }
+
+  {
+    const personalHeaders={Cookie:cookie('web',value),Origin:web,'Content-Type':'application/json'};
+    const staffPersonalHeaders={Cookie:cookie('admin',staffSession),Origin:admin,'Content-Type':'application/json'};
+    const profile=await fetch(web+'/api/account/profile?user_id='+staff.id,{headers:personalHeaders});assert.equal(profile.status,200);
+    const own=await profile.json();assert.equal(own.username,'realtrader');assert.equal(own.compliance.kyc,'approved');assert.equal(own.trading.amount,1240.5);assert.equal(own.trading.asOf,'2026-09-19T12:00:00Z');assert.equal(own.session.workspace,'customer');assert.equal(JSON.stringify(own).includes('NEVER_EXPOSE'),false);
+    const staffProfile=await fetch(admin+'/api/account/profile?user_id='+trader.id,{headers:staffPersonalHeaders});assert.equal(staffProfile.status,200);const staffOwn=await staffProfile.json();assert.equal(staffOwn.username,'realstaff');assert.equal(staffOwn.trading.amount,-85.25);assert.equal(staffOwn.session.workspace,'staff');
+    for(const mode of ['missing','error','invalid','zero']) {profileStatsMode=mode;const result=await (await fetch(web+'/api/account/profile',{headers:personalHeaders})).json();assert.equal(result.trading.amount,mode==='zero'?0:null);assert.equal(result.trading.state,mode==='error'?'unavailable':mode==='zero'?'available':'pending');}profileStatsMode='available';
+    assert.equal((await fetch(admin+'/api/account/profile',{headers:{Cookie:cookie('admin',value)}})).status,403);
+    assert.equal((await fetch(web+'/api/account/profile')).status,401);
+    const update=(origin,headers,body)=>fetch(origin+'/api/account/profile',{method:'POST',headers,body:JSON.stringify(body)});
+    assert.equal((await update(web,personalHeaders,{avatar:{hairColor:'#452819'},id:staff.id})).status,400);
+    assert.equal((await update(web,personalHeaders,{avatar:{role:'super_admin'}})).status,400);
+    assert.equal((await update(web,{...personalHeaders,Origin:'https://evil.example'},{avatar:{hairColor:'#452819'}})).status,403);
+    assert.equal((await update(web,personalHeaders,{avatar:{hairColor:'#452819'}})).status,200);
+    assert.equal(users.get(trader.id).user_metadata.certa_avatar.hairColor,'#452819');assert.equal(users.get(trader.id).app_metadata.role,undefined);
+    assert.equal((await update(admin,staffPersonalHeaders,{avatar:{outfitColor:'#123456'}})).status,200);
+    assert.equal(users.get(staff.id).user_metadata.certa_avatar.outfitColor,'#123456');assert.equal(users.get(staff.id).app_metadata.role,'certa_admin');
+    unverifiedCustomers.add(trader.id);assert.equal((await fetch(web+'/api/account/profile',{headers:personalHeaders})).status,403);unverifiedCustomers.delete(trader.id);
+    console.log('PASS: personal profile and compliance ownership, private-field filtering, customer verification, staff self-service, colour-only writes and cross-origin rejection.');
+  }
+
+  for(const path of ['/api/emails/templates','/api/tickets/pools','/api/commerce/history']) {
+    assert.equal((await fetch(`${admin}${path}`)).status,401,`guest access ${path}`);
+    assert.equal((await fetch(`${admin}${path}`,{headers:{Authorization:`Bearer ${value.access_token}`}})).status,403,`customer staff access ${path}`);
+    assert.equal((await fetch(`${admin}${path}`,{headers:{Authorization:`Bearer ${staffSession.access_token}`}})).status,403,`restricted staff access ${path}`);
+  }
+  for(const path of ['/api/commerce/current','/api/commerce/creator','/api/commerce/context','/api/tickets/mine','/api/auth/second-factor/status']) assert.equal((await fetch(`${web}${path}`)).status,401,`guest customer access ${path}`);
+  console.log('PASS: commerce, tickets and email administration deny guests, customers and staff without feature permissions.');
+
+  {
     const owner={...staff,id:randomUUID(),email:'owner@example.test',app_metadata:{role:'super_admin'}};
-    const editor={...staff,id:randomUUID(),email:'editor@example.test',app_metadata:{role:'admin',provider:'email'}};
+    const editor={...staff,id:randomUUID(),email:'editor@example.test',app_metadata:{role:'admin',provider:'email',content_permissions:[]}};
     users.set(owner.id,owner);users.set(editor.id,editor);
     const ownerSession=session(owner);
     const ownerHeaders={Cookie:cookie('admin',ownerSession),Origin:admin,'Content-Type':'application/json'};
@@ -220,11 +421,31 @@ try {
     const saved=await post(change);assert.equal(saved.status,200);assert.equal(users.get(editor.id).app_metadata.provider,'email');
     assert.equal((await post(change)).status,409);
     assert.equal((await fetch(`${admin}/api/content/newsletter/templates`,{headers:ownerHeaders})).status,200);
-    users.set(owner.id,{...owner,app_metadata:{role:'admin'}});
+    users.set(owner.id,{...owner,app_metadata:{role:'admin',certa_pages:[]}});
     assert.equal((await fetch(`${admin}/api/staff`,{headers:ownerHeaders})).status,403,'stale master token must not preserve access');
     assert.equal((await post(change)).status,403);
+    const legacy={...staff,id:randomUUID(),email:'production-admin@example.test',app_metadata:{role:'certa_admin',certa_admin:true,provider:'email'}};
+    const colleague={...legacy,id:randomUUID(),email:'colleague@example.test'};
+    users.set(legacy.id,legacy);users.set(colleague.id,colleague);
+    const legacyHeaders={Cookie:cookie('admin',session(legacy)),Origin:admin,'Content-Type':'application/json'};
+    const productionList=await fetch(`${admin}/api/staff`,{headers:legacyHeaders});assert.equal(productionList.status,200);
+    const productionDirectory=await productionList.json();assert.equal(productionDirectory.canEdit,true);assert.equal(productionDirectory.canPromote,false);
+    const productionTarget=productionDirectory.items.find(item=>item.id===colleague.id);assert.equal(productionTarget.productionPages,null);
+    const productionChange={id:colleague.id,revision:productionTarget.revision,role:'staff',productionPages:['admins','tickets']};
+    assert.equal((await post({...productionChange,role:'master'},legacyHeaders)).status,403);
+    assert.equal((await post({...productionChange,productionPages:['invented']},legacyHeaders)).status,400);
+    assert.equal((await post(productionChange,legacyHeaders)).status,200);
+    assert.deepEqual(users.get(colleague.id).app_metadata.certa_pages,['admins','tickets']);
+    assert.equal(users.get(colleague.id).app_metadata.provider,'email');
+    assert.equal(users.get(colleague.id).app_metadata.content_permissions,undefined);
+    assert.equal((await post(productionChange,legacyHeaders)).status,409);
+    assert.equal((await post({...productionChange,id:legacy.id},legacyHeaders)).status,403);
+    assert.equal((await fetch(`${admin}/api/content/newsletter/templates`,{headers:legacyHeaders})).status,200);
+    legacy.app_metadata={role:'certa_admin',certa_pages:[]};
+    assert.equal((await fetch(`${admin}/api/staff`,{headers:legacyHeaders})).status,403);
+    users.delete(legacy.id);users.delete(colleague.id);
     users.delete(owner.id);users.delete(editor.id);
-    console.log('PASS: master-only staff directory and edits, protected owners, input validation, stale edits, fresh revocation and master content access.');
+    console.log('PASS: production and master staff access, metadata-preserving edits, protected owners, input validation, stale edits, fresh revocation and master content access.');
   }
 
   {
@@ -327,6 +548,30 @@ try {
   assert.equal((await fetch(`${web}/api/content/puzzles/rewards?puzzle_id=invalid`,{headers:puzzleHeaders})).status,400);
 
   assert.equal((await fetch(`${web}/api/content/newsletter/issues`)).status,200);
+  {
+    const originalUser=users.get(trader.id);
+    const headers={Cookie:cookie('web',value),Origin:web,'Content-Type':'application/json'};
+    const subscribe=(body,extraHeaders=headers)=>fetch(`${web}/api/content/newsletter/subscribe`,{method:'POST',headers:extraHeaders,body:JSON.stringify(body)});
+    assert.equal((await subscribe({email:trader.email,consent:true},{Origin:web,'Content-Type':'application/json'})).status,401);
+    assert.equal((await subscribe({email:trader.email,consent:true},{...headers,Origin:'https://evil.example'})).status,403);
+    users.set(trader.id,{...originalUser,email_confirmed_at:null});
+    assert.equal((await subscribe({email:trader.email,consent:true})).status,403);
+    users.set(trader.id,{...originalUser,email_confirmed_at:new Date().toISOString()});
+    assert.equal((await subscribe({email:trader.email,consent:false})).status,400);
+    assert.equal((await subscribe({email:'someone-else@example.test',consent:true})).status,400);
+    assert.equal((await subscribe({email:null,consent:true})).status,400);
+    assert.equal(newsletterSubscriptions.length,0,'No subscription before consent and verified email match');
+    const subscribed=await subscribe({email:` ${trader.email.toUpperCase()} `,consent:true});
+    assert.equal(subscribed.status,200);assert.deepEqual(await subscribed.json(),{subscribed:true});
+    assert.deepEqual(newsletterSubscriptions,[trader.email]);
+    assert.equal((await subscribe({consent:true})).status,200,'Existing clients can omit the email field');
+    newsletterSuppressed=true;
+    const suppressed=await subscribe({email:trader.email,consent:true});
+    assert.equal(suppressed.status,409);assert.equal((await suppressed.json()).error,'suppressed');
+    assert.equal(newsletterSubscriptions.length,2,'Suppressed addresses are not resubscribed');
+    newsletterSuppressed=false;users.set(trader.id,originalUser);
+    console.log('PASS: footer newsletter consent, verified email matching, signed-out/origin denial, legacy payload and suppression.');
+  }
   assert.equal((await fetch(`${web}/api/content/newsletter/unsubscribe?token=bad`)).status,400);
   assert.equal((await fetch(`${web}/api/webhooks/newsletter`,{method:'POST',body:'{}'})).status,503);
   delete staff.app_metadata.content_permissions;
@@ -455,6 +700,25 @@ try {
   const rejectedOrigin = await fetch(`${web}/login`, { method: 'POST', body, headers: { Origin: 'https://evil.example' }, redirect: 'manual' });
   assert.ok(rejectedOrigin.status >= 400);
   console.log('PASS: real Next login/logout forms set and clear HttpOnly cookies; cross-origin action submission is blocked.');
+  {
+    // A customer whose second factor is outstanding finishes in place: the sign-in action
+    // must hand back the code step, not bounce the browser to another page.
+    unverifiedCustomers.add(trader.id);
+    const page = await fetch(`${web}/login`); const pending = hiddenInputs(await page.text());
+    pending.set('email', trader.email); pending.set('password', 'fixture-password');
+    const response = await fetch(`${web}/login`, { method: 'POST', body: pending, headers: { Origin: web }, redirect: 'manual' });
+    assert.equal(response.status, 200, 'an outstanding factor must not redirect');
+    assert.equal(response.headers.get('location'), null);
+    const html = await response.text();
+    assert.match(html, /Six-digit code/, 'the code step should render in place');
+    assert.ok(response.headers.getSetCookie().some(value => /certa-web-auth/.test(value)), 'the password session is still established');
+    // The page guard stays as the backstop for anyone who arrives at /account directly.
+    const cookies = response.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+    const guarded = await fetch(`${web}/account`, { headers: { Cookie: cookies }, redirect: 'manual' });
+    assert.equal(new URL(guarded.headers.get('location'), web).pathname, '/login');
+    unverifiedCustomers.delete(trader.id);
+    console.log('PASS: an outstanding second factor is completed in the sign-in form, and /account still guards direct arrivals.');
+  }
 
   const refreshed = await fetch(`${web}/account`, { headers: { Cookie: cookie('web', session(trader, true)) }, redirect: 'manual' });
   assert.equal(refreshed.status, 200); assert.ok(refreshes > 0); assert.ok(refreshed.headers.getSetCookie().some(value => value.startsWith('certa-web-auth')));

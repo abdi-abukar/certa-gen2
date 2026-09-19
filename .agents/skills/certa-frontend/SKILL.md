@@ -68,6 +68,14 @@ Revise the generic part and briefly state why. One deliberate art choice is more
 useful than multiplying effects. This is a working decision, not an approval gate.
 For a narrow fix, make only the relevant decision; skip the full design exercise.
 
+**Say each thing once.** A screen states a fact in one place: one step indicator,
+not a progress bar plus a "Step 1 of 3" heading plus a "three steps" subtitle; one
+title, not a title restated by its description. Cut filler that narrates every
+aspect of the screen ("then you're in", "here's what happens next") and remove
+the space it occupied rather than leaving empty padding. Related short fields
+(first and last name) stay on one row at phone width; stack only when a field
+cannot hold its own content.
+
 ## Pass two: implement within the owners
 
 - Keep platform UI local. Routes compose; business operations remain in their

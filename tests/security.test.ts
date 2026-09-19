@@ -116,3 +116,14 @@ test('corrupt or incomplete native storage is rejected instead of returning part
   values.delete(key);
   assert.equal(await storage.getItem('session'), null);
 });
+
+
+test('checkout and challenge credentials stay in web; email worker receives only its delivery settings', () => {
+ const privateSettings={...settings,AUTHORIZE_NET_TRANSACTION_KEY:'charge-secret',NMI_SECURITY_KEY:'charge-secret',NOWPAYMENTS_API_KEY:'charge-secret',CERTA_AUTH_CHALLENGE_SECRET:'challenge-secret',RESEND_API_KEY:'email-secret',EMAIL_DELIVERY_MODE:'disabled'};
+ for(const app of ['web','admin','mobile','tradara','contracts','discord','content']) {
+   const projected=environmentFor(app,privateSettings,{});
+   assert.equal(JSON.stringify(projected).includes('charge-secret'),app==='web');
+   assert.equal(JSON.stringify(projected).includes('challenge-secret'),app==='web');
+   assert.equal(JSON.stringify(projected).includes('email-secret'),app==='web'||app==='content');
+ }
+});

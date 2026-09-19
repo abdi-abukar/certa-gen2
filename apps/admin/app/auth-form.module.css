@@ -1,0 +1,18 @@
+.form { --action:#183f2d; --accent:#285c3c; --line:#70856f; display:grid; gap:16px; margin:28px 0 0; }
+.fields { display:grid; gap:16px; min-width:0; margin:0; padding:0; border:0; }
+.fields label { display:grid; gap:8px; min-width:0; font-size:14px; font-weight:600; color:var(--forest); }
+.form .fields input:not([type='checkbox']) { min-width:0; width:100%; min-height:48px; padding:12px 14px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--forest); font:inherit; font-size:16px; line-height:1.5; }
+.form input::placeholder { color:#6b7a6e; }
+.secret { position:relative; display:block; }
+.form .fields .secret input { padding-right:72px; }
+.reveal { position:absolute; top:50%; right:8px; transform:translateY(-50%); min-height:32px; padding:4px 10px; border:0; border-radius:4px; background:transparent; color:var(--action); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.reveal:hover { background:#e8ede7; }
+.inlineLink { justify-self:start; color:var(--action); font-size:13px; font-weight:650; line-height:1.5; text-decoration:underline; text-underline-offset:3px; }
+.inlineLink:hover { color:var(--accent); }
+.primary { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:12px 18px; border:0; border-radius:6px; background:var(--action); color:var(--ivory); font:inherit; font-size:16px; font-weight:650; cursor:pointer; }
+.primary:hover { background:var(--accent); }
+.primary:disabled { opacity:.55; cursor:wait; }
+.form :is(input,button,a):focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+.form .error { margin:0; padding:10px 12px; border:1px solid #a5213133; border-radius:6px; background:#fff3f3; color:#a52131; font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.form .notice { margin:0; color:var(--accent); font-size:14px; font-weight:600; }
+.srOnly { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }

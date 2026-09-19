@@ -8,6 +8,7 @@
 .dialog[data-closing='true']::backdrop { animation: backdropLeave 160ms ease-in both; }
 .dialog * { box-sizing: border-box; }
 .layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); }
+.dialog[data-artwork-side='left'] .layout { grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); }
 .dialog[data-artwork='false'] .layout { grid-template-columns: minmax(0, 1fr); min-height: 0; }
 .content { background: #f6f3e9; min-width: 0; padding: 64px 40px 40px; }
 .content h2 { margin: 0 0 12px; color: #06130d; font-size: clamp(28px, 3vw, 36px); line-height: 1.12; letter-spacing: -.04em; font-weight: 700; white-space: pre-line; }
@@ -15,13 +16,15 @@
 .dialog p { color: #465447; font-size: 16px; line-height: 1.55; }
 .description { margin: 0 0 28px; }
 .dialog label { font-size: 14px; }
-.dialog :is(input, select, textarea) { min-width: 0; width: 100%; min-height: 48px; font-family: inherit; font-size: 16px; line-height: 1.5; border-radius: 6px; scroll-margin-block: 24px; }
-.dialog input { padding: 12px 14px; border-color: #70856f; }
+.dialog :is(input:where(:not([type='checkbox']):not([type='radio'])), select, textarea) { min-width: 0; width: 100%; min-height: 48px; font-family: inherit; font-size: 16px; line-height: 1.5; border-radius: 6px; scroll-margin-block: 24px; }
+.dialog input:where(:not([type='checkbox']):not([type='radio'])) { padding: 12px 14px; border-color: #70856f; }
 .dialog :focus-visible { outline: 2px solid #285c3c; outline-offset: 4px; }
 .dialog .close { position: absolute; z-index: 1; top: 12px; right: 12px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid #70856f55; border-radius: 50%; background: #f6f3e9; color: #06130d; cursor: pointer; transition: background 120ms; }
 .dialog .close:hover { background: #e8e9df; }
 .artwork { position: relative; min-width: 0; overflow: hidden; background: #123522; color: #f6f3e9; }
 .dialog[data-content-sized='true'] .artwork { contain: size; container-type: size; }
+.dialog[data-layout='sidebar'] .layout { grid-template-columns: minmax(240px, .75fr) minmax(0, 1.85fr); min-height: 600px; }
+.dialog[data-layout='sidebar'] .artwork { contain: none; container-type: normal; }
 @keyframes enter { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
 @keyframes leave { to { opacity: 0; transform: translateY(8px) scale(.99); } }
 @keyframes backdropEnter { from { opacity: 0; } to { opacity: 1; } }
@@ -31,6 +34,7 @@
   .surface, .dialog[data-artwork='false'] .surface { width: 100%; border-radius: 20px 20px 0 0; animation-name: sheetEnter; }
   .dialog::after { content: ''; position: absolute; top: calc(var(--dialog-viewport-top) + var(--dialog-viewport-height) - 1px); bottom: 0; inset-inline: 0; background: #f6f3e9; pointer-events: none; }
   .dialog[data-closing='true'] .surface { animation-name: sheetLeave; }
+  .dialog[data-layout='sidebar'] .layout { min-height: 0; }
   .layout { display: flex; flex-direction: column; min-height: 0; }
   .content { padding: 60px 24px max(28px, env(safe-area-inset-bottom)); }
   .artwork { display: none; }

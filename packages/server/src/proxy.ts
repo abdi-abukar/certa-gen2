@@ -5,10 +5,15 @@ import { cookieOptions, serverConfig } from './supabase';
 export async function sessionProxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const dev = process.env.NODE_ENV !== 'production';
+  const checkout = process.env.CERTA_APP === 'web' && request.nextUrl.pathname === '/checkout';
+  const paymentHosts = checkout ? ' https://api.authorize.net https://apitest.authorize.net https://js.authorize.net https://jstest.authorize.net https://accept.authorize.net https://test.authorize.net https://secure.nmi.com https://sandbox.nmi.com' : '';
   const csp = [
     "default-src 'self'", `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'", "img-src 'self' data:", "font-src 'self'",
-    `connect-src 'self'${dev ? ' ws: wss:' : ''}`, "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
+    // The dashboard previews locally captured clips. Keep this on every web
+    // document because client navigation retains the original document's CSP.
+    `media-src 'self'${process.env.CERTA_APP === 'web' ? ' blob:' : ''}`,
+    `connect-src 'self'${paymentHosts}${dev ? ' ws: wss:' : ''}`, `frame-src 'self'${paymentHosts}`, "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
   ].join('; ');
   const headers = new Headers(request.headers);
   headers.set('x-nonce', nonce);

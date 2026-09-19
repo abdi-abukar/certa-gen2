@@ -4,6 +4,9 @@ import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
+import { emailConcurrency } from '../tests/email-concurrency.mjs';
+import { ticketConcurrency } from '../tests/tickets-concurrency.mjs';
+import { commerceConcurrency } from '../tests/commerce-concurrency.mjs';
 const bin=process.env.PG_BIN??'/opt/homebrew/opt/postgresql@16/bin';
 const directory=await mkdtemp(join(tmpdir(),'certa-tradara-db-'));
 const root=new URL('../',import.meta.url);
@@ -26,6 +29,9 @@ grant usage on schema public,auth to anon,authenticated,service_role;
  const file=join(directory,'test.sql');
  await writeFile(file,fixture+await readFile(new URL('supabase/migrations/20260915160000_tradara_backend.sql',root),'utf8')+await readFile(new URL('tests/tradara-db.sql',root),'utf8')+await readFile(new URL('supabase/migrations/20260915190000_account_slots.sql',root),'utf8')+await readFile(new URL('tests/account-slots-db.sql',root),'utf8')+await readFile(new URL('supabase/migrations/20260915220000_contracts.sql',root),'utf8')+await readFile(new URL('tests/contracts-db.sql',root),'utf8')+await readFile(new URL('supabase/migrations/20260915230000_payouts.sql',root),'utf8')+await readFile(new URL('tests/payouts-db.sql',root),'utf8')+await readFile(new URL('supabase/migrations/20260916000000_discord.sql',root),'utf8')+await readFile(new URL('tests/discord-db.sql',root),'utf8')+await readFile(new URL('supabase/migrations/20260916010000_content.sql',root),'utf8')+await readFile(new URL('tests/content-db.sql',root),'utf8')+await readFile(new URL('supabase/migrations/20260916020000_awards.sql',root),'utf8')+await readFile(new URL('tests/awards-db.sql',root),'utf8'));
  await run('psql',['-h','127.0.0.1','-p',String(port),'-U','certa_test','-d','postgres','-v','ON_ERROR_STOP=1','-f',file]);
+ const authFile=join(directory,'second-factor.sql');
+ await writeFile(authFile,await readFile(new URL('supabase/migrations/20260917040000_customer_second_factor.sql',root),'utf8')+await readFile(new URL('tests/second-factor-db.sql',root),'utf8'));
+ await run('psql',['-h','127.0.0.1','-p',String(port),'-U','certa_test','-d','postgres','-v','ON_ERROR_STOP=1','-f',authFile]);
  const sql=statement=>run('psql',['-h','127.0.0.1','-p',String(port),'-U','certa_test','-d','postgres','-v','ON_ERROR_STOP=1','-At','-c',statement]);
  const user='33333333-3333-4333-8333-333333333333';
  await sql(`insert into auth.users values ('${user}');
@@ -82,6 +88,18 @@ grant usage on schema public,auth to anon,authenticated,service_role;
  console.log('PASS: newsletter audience/frozen retries/suppression/RLS, weekly puzzle DST/limits, concurrent reward caps and publication dedupe.');
  console.log('PASS: Discord one-to-one linking under concurrency, OAuth replay fencing, durable cleanup, pass/payout dedupe and server-only permissions.');
  console.log('PASS: isolated migrations, payout eligibility/recovery/RLS, simultaneous payout requests/approvals/session allocation, contracts and slot admission.');
+
+ const migrationFiles=['20260917010000_commerce.sql','20260917020000_tickets.sql','20260917030000_emails.sql','20260917050000_customer_signup.sql','20260917060000_checkout_experience.sql'];
+ const featureFile=join(directory,'features.sql');
+ let featureSql='';
+ for(const name of migrationFiles)featureSql+=await readFile(new URL(`supabase/migrations/${name}`,root),'utf8')+'\n';
+ for(const name of ['tickets-db.sql','email-db.sql','commerce-db.sql','signup-db.sql','checkout-experience-db.sql'])featureSql+=await readFile(new URL(`tests/${name}`,root),'utf8')+'\n';
+ await writeFile(featureFile,featureSql);
+ await run('psql',['-h','127.0.0.1','-p',String(port),'-U','certa_test','-d','postgres','-v','ON_ERROR_STOP=1','-f',featureFile]);
+ await emailConcurrency(sql);
+ await ticketConcurrency(sql);
+ await commerceConcurrency(sql);
+ console.log('PASS: full-schema commerce, tickets, transactional email and second-factor migrations and denial tests.');
 
 }finally{
  if(started)await run('pg_ctl',['-D',join(directory,'data'),'-m','fast','stop']);

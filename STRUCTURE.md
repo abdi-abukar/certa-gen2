@@ -44,7 +44,7 @@ certa-mono-repo/
           hero-art.md        Provenance and generation prompt for introduction artwork
         api/me/              Verified bearer-token identity endpoint
         auth/                Email-link callback and error route
-        account/             Protected account shell
+        account/             Trader shell, selected-evaluation overview and tools
         login/               Email/password sign-in
         signup/              Customer registration
         forgot-password/     Request reset email
@@ -274,8 +274,9 @@ existing `newsletter_subscribers` remains the single subscriber audience.
 Admin `app/puzzles/` owns the staff draft/editor, animated clue preview, ticket-ID
 link and release controls. Image normalization remains in the shared server
 content owner; animated GIFs are re-encoded to bounded WebP.
-No ticket inventory implementation is introduced. The narrow `puzzle-rewards` export
-accepts the future ticket issuer as an injected, idempotent adapter.
+The ticket owner supplies exact prize inventory and the idempotent issuer. New
+puzzle rewards allocate atomically; the `puzzle-rewards` export recovers historical
+pending rewards with isolated retries. See `TICKETS.md`.
 
 ## Awards and scenes
 
@@ -292,6 +293,11 @@ accepts the future ticket issuer as an injected, idempotent adapter.
 
 ## Staff access and navigation
 
+Admin `app/auth-form.tsx` and `auth-form.module.css` own staff login/recovery/reset
+controls. Auth-page styling belongs to `admin-shell.module.css`; `app/fonts/`
+contains the local DM Sans font and its OFL license, matching client typography
+without importing another app's runtime.
+
 `apps/admin/app/admin-shell.tsx` and its CSS module own the desktop sidebar and
 mobile navigation accordion. `app/staff/` owns the staff directory and permission
 editor; `app/api/staff/route.ts` delegates to the server-only `staff.ts` operation.
@@ -299,6 +305,152 @@ editor; `app/api/staff/route.ts` delegates to the server-only `staff.ts` operati
 master-role predicate, used by both admin UI and server authorization. There is
 no browser Auth Admin client or new staff table.
 
+Admin `app/traders/` owns customer search, pagination and the private-window
+sign-in link UI; `app/api/traders/route.ts` delegates to server-only `traders.ts`.
+`packages/server/src/support-access.ts` owns support permissions, target checks,
+encrypted grants and session proofs. `support-http.ts` owns the web-only redemption
+boundary, composed by `web/app/api/auth/support/route.ts` and `app/auth/support/`.
+Existing auth/second-factor guards validate the proof and fresh staff permission;
+the customer shell owns its visible support banner and local sign-out. No new
+workspace or database table is introduced. See `AUTHENTICATION.md` for limits,
+credential handling and the separate support authorization path.
+
 The public village character’s tap-triggered decorative hop is sampled by
 `packages/game/src/firm-jumps.js`; `initFirm.js` owns their lifecycle, pause and
 reduced-motion behavior. These animations have no account or award authority.
+
+## September 17 backend migration owners
+
+- `packages/server/src/commerce/`: authenticated persistent checkout, original
+  processor adapters, provider callbacks, payment recovery and canonical settlement.
+  Web `/checkout`, admin `/commerce`, API `/api/commerce/[...path]`, and web-only
+  `/api/internal/payment-worker` compose this owner.
+- `packages/server/src/tickets/`: exact staff-selected finite prize inventory,
+  shared/individual codes, claims, scratch reveal, redemption and puzzle issuer.
+  Web and admin each have `/tickets` and protected ticket APIs.
+- `packages/server/src/email/`: original transactional catalog, editable versioned
+  copy, AI drafting, preview and durable delivery. Admin `/emails` owns editing;
+  the existing content service processes its outbox. Auth code bodies stay ephemeral.
+- `packages/server/src/signup/`: guest signup rules (username, accepted countries),
+  pre-account mailbox proof and confirmed account creation with a verified first
+  session. Web `/api/auth/signup/[...path]`, the auth dialog and `/signup`, `/login`,
+  `/forgot-password` route fallbacks compose it; the admin app never registers customers.
+- `packages/server/src/second-factor.ts` and `second-factor-http.ts`: customer
+  verification admission, email challenge lifecycle and Supabase TOTP operations.
+  Shared auth/API guards enforce this boundary; `/verify` and `/account/security`
+  provide web flows, and native account sign-in completes existing factors.
+- `services/content/src/main.ts`: existing content and awards work plus bounded
+  puzzle ticket delivery, transactional delivery and expired-auth-data cleanup.
+
+Each migration has a unique version. New `cm_*`, `tk_*`, `ce_*`, `cf_*` and `cu_*` domain
+storage is service-only; existing `cc_*` remains the compliance owner. All apps
+continue to import narrow `@certa/server` exports, never the parent repository.
+
+## Trader dashboard
+
+`apps/web/app/account/session-recorder.tsx` owns local screen-recording controls in
+the identity-keyed customer shell. Its context lets the opened dashboard report a
+resolved account; only then is the idle recording prompt available. Active capture
+and retained footage remain controllable during account-route navigation.
+`session-recording.ts` owns browser capture,
+VP8 encoding and WebM export; `recording-buffer.ts` owns bounded, key-frame-aligned
+retention. Capture persists between account routes, stops on shell teardown, and
+never sends footage to an API. The muxer is loaded only after a user chooses a source.
+
+`apps/web/app/account/customer-shell.tsx` owns the protected cream navigation,
+responsive drawer and customer profile. `dashboard.tsx` composes selected account
+states; `dashboard-model.ts` derives presentation from confirmed projections.
+`accounts.tsx` and `accounts.module.css` own the `/account` three-slot card grid and
+previous-account list. `account-slot-stack.tsx` and its CSS module own the responsive
+grid/mobile swipe stack, adapted from GodUI Card Swap's rank-based springs using
+the workspace's existing Framer Motion version. One card tree serves both layouts;
+inactive mobile cards are inert, keyboard/screen-reader selection remains available,
+and reduced motion disables the spring and pointer tilt. Swipes make no API reads.
+`dashboard-model.ts` derives displayed occupied, available
+and checking cards from the confirmed allocation, preserving pending purchases and
+over-capacity accounts. An explicit account/slot query opens the existing detailed
+dashboard; previous accounts link to their historical view. The grid makes one
+owner-scoped dashboard read per load, manual refresh or pagination request, without
+live subscriptions or per-account summary reads. Navigation places Purchase account
+directly below Accounts and opens the standalone `/checkout` page.
+`account/trading-launch.tsx` owns the customer sidebar's bounded availability read
+and branded “Trade on Tradara” action, which links to checkout without an active
+account. The T vector is adapted from the parent
+`components/certa/tradara-mark.tsx` without a runtime import; its green matches
+the existing `public/t_logo.svg`. The shared shell accepts an optional action slot
+for desktop/mobile and pairs it with an icon-only sign-out button. It also owns
+the edge collapse control and banknote navigation icon.
+The first empty card is adapted from the user-supplied `certa_first_segment`
+reference; its original illustration remains at `apps/web/public/account/first-visit-art.png`.
+The other empty cards share `new-slot-art.png` from `certa_account_blocks_html`;
+funded, preparing, invitation and delayed illustrations live in the same public
+account asset directory. The evaluation card reuses the first-visit illustration
+because the reference's cropped evaluation image includes a sample dollar value.
+Only markup/styles and selected artwork migrate; sample financial metrics and
+global reference CSS do not enter the app. No extra provider or per-account reads.
+`use-account-dashboard.ts` owns bounded initial/refresh reads, selected account
+requests and live invalidation. `trading-activity.tsx` owns the selected session and
+paginated trades. `history/` includes direct reads for accounts beyond the first
+archive page. `evaluations/` shows the commerce catalog and links into the existing
+checkout owner. `account-tools.tsx` serves compliance, terminal setup, rules and
+support; detailed compliance remains off the overview.
+
+`packages/server/src/tradara/dashboard.ts` owns read-only dashboard and calendar
+composition behind the existing authenticated trading HTTP boundary. It uses
+Certa projections and allocation evidence with no Tradara provider calls.
+`packages/game/src/initDashboard.js` owns the lazy dashboard Kaplay mode;
+`dashboard-motion.js` bounds presentation movement. `account/journey.tsx` embeds
+same-origin output and stores the last observed scene progress per user/account.
+Result acknowledgements are presentation preferences in browser storage, keyed by
+canonical transition IDs. They do not change account lifecycle or reserve slots.
+
+Checkout experience ownership: `apps/web/app/checkout/model.ts` holds local UI
+contracts/API errors; `secure-payment.tsx` owns browser tokenization and teardown;
+`checkout.tsx` composes review, payment, saved order history and per-purchase issuance.
+`account/creator-code.tsx` saves the buyer preference through the commerce owner.
+`cm_creator_preferences`, quote/configuration RPCs and creator discount rates belong
+to `20260917060000_checkout_experience.sql`; fulfillment stays in the existing slot
+coordinator and Tradara worker. `tests/checkout-experience-db.sql` covers discounts,
+immutable attribution, owner isolation and duplicate/free issuance.
+
+### Shared account navigation and profile
+
+`packages/ui-web/src/site-footer.tsx` and its CSS module own the shared illustrated
+footer for web and admin. The supplied `certa_footer_html (1)` landscape and logo
+are optimized into each app's `public/brand/certa-footer-*.webp`. The component
+keeps the MVP's social, support, public information and legal destinations; pages
+not migrated here link to the existing `certafutures.com` site. Customer routes
+use the local origin, or the configured customer origin from admin. No legacy
+runtime is imported. Web `_components/site-footer.tsx` supplies the newsletter
+form through the existing content subscription endpoint. It requires unchecked
+explicit consent and an email matching the authenticated, verified customer;
+anonymous submission offers sign-in. The footer performs no mount-time identity
+reads. Admin links to the customer form instead of posting with staff credentials.
+`SiteFrame` owns the full-width footer, while customer/admin adapters supply the
+shared shell's footer slot so it follows the content and the sidebar's width.
+
+`packages/ui-web/src/account-shell.tsx` owns the client/staff sidebar, responsive
+navigation drawer, collapse preference and sign-out presentation. App adapters
+supply their route lists, pathname, Link component and server action; shared UI
+has no Next/server imports. `page-masthead.tsx` and its CSS module own the shared
+top-right decorative header, rendered once by the sidebar shell and directly by
+the standalone checkout. Its optional content slot aligns the customer welcome
+beside the illustration with a divider below. Web `_components/customer-masthead.tsx`
+owns the first-name/handle greeting and saved-character account entry for the
+customer shell and checkout, using the verified identity already supplied by their
+routes. The Accounts index moves its heading into this banner. The shared account
+menu's portrait variant reuses its existing character renderer and settings dialog;
+the shell can omit its desktop profile entry while preserving mobile drawer access
+and sign-out. Both apps serve the supplied `certa_masthead_component`
+PNG from `public/brand/certa-masthead-brand.png`; its handwritten text is part of
+the image, with no font, request or animation dependency. The source reference's
+800px artwork-hiding breakpoint is preserved; meaningful welcome content stays
+visible. `account-menu.tsx` owns the pixel-character entry and
+personal account dialog. `responsive-dialog.tsx` and its scroll helper are shared
+by account settings and the web auth/puzzle dialogs. Game character drawing stays
+in `@certa/game/character-look`; both apps serve the existing game sprite asset.
+
+`packages/server/src/account-profile.ts` serves each app's `/api/account/profile`.
+It reads the actor's production username and identity/sanctions status and updates
+only the actor's avatar colours in Auth user metadata. It never accepts a target
+user, returns private compliance documents, or grants staff/compliance permissions.

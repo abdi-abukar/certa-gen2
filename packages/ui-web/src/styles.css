@@ -2,15 +2,20 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 main { width: min(100% - 40px, 520px); margin: 10vh auto; }
-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 6vw; border-bottom: 1px solid #d9e0dc; background: white; }
+header { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 20px 6vw; border-bottom: 1px solid #d9e0dc; background: white; }
 header a { font-weight: 700; text-decoration: none; }
+header .brand { display: inline-flex; align-items: center; gap: 10px; color: #14241e; font-size: 18px; letter-spacing: -.3px; margin-right: auto; }
+header .brand img { width: 36px; height: 36px; }
 h1 { font-size: 32px; letter-spacing: -1px; margin: 0 0 12px; }
 p { color: #5c6963; line-height: 1.6; overflow-wrap: anywhere; }
 a { color: #126344; }
 form { display: grid; gap: 16px; margin: 24px 0; }
 label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
-input, button, .button { border-radius: 10px; font: inherit; padding: 13px 16px; }
-input { width: 100%; border: 1px solid #b8c5be; background: white; color: #14241e; }
+/* Text-field skinning must not reach checkboxes and radios: a 20px box with 16px of
+   padding collapses the control. They keep the native widget and take only the accent. */
+input:not([type='checkbox']):not([type='radio']), button, .button { border-radius: 10px; font: inherit; padding: 13px 16px; }
+input:not([type='checkbox']):not([type='radio']) { width: 100%; border: 1px solid #b8c5be; background: white; color: #14241e; }
+input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-color: #126344; }
 button, .button { background: #126344; color: white; border: 0; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; text-align: center; }
 button:disabled { opacity: .55; cursor: wait; }
 :focus-visible { outline: 3px solid #4d9b7b; outline-offset: 3px; }

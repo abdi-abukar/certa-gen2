@@ -20,6 +20,7 @@
     "supabase:check": "node scripts/check-supabase.mjs",
     "dev:tradara": "pnpm --filter @certa/tradara-service dev",
     "test:tradara-db": "node scripts/test-tradara-db.mjs",
+    "test:email-db": "node scripts/test-email-db.mjs",
     "dev:contracts": "pnpm --filter @certa/contracts-service dev",
     "dev:discord": "pnpm --filter @certa/discord-service dev",
     "dev:content": "pnpm --filter @certa/content-service dev",

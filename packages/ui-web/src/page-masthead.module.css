@@ -1,0 +1,6 @@
+.masthead { display:flex; justify-content:flex-end; width:100%; margin:0 0 16px; }
+.art { flex:0 0 auto; width:clamp(260px,25vw,375px); max-width:100%; line-height:0; user-select:none; pointer-events:none; }
+.art img { display:block; width:100%; height:auto; aspect-ratio:375 / 117; object-fit:contain; }
+.withContent { align-items:center; justify-content:space-between; gap:32px; min-height:150px; padding:4px 0 28px; margin-bottom:32px; border-bottom:1px solid #dfe3d8; }
+.content { flex:1; min-width:0; }
+@media(max-width:800px) { .art,.masthead:not(.withContent) { display:none; } .withContent { min-height:0; padding:0 0 24px; margin-bottom:24px; } }

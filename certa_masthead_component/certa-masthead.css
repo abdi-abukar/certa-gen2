@@ -1,0 +1,6 @@
+*{box-sizing:border-box}body{margin:0;background:#fbfaf5;font-family:Inter,system-ui,sans-serif}
+.page-header{position:relative;min-height:145px;padding:20px 28px}
+.certa-masthead-brand{width:clamp(260px,25vw,375px);line-height:0;user-select:none;pointer-events:none}
+.certa-masthead-brand img{display:block;width:100%;height:auto;object-fit:contain}
+.page-header>.certa-masthead-brand{position:absolute;top:8px;right:20px}
+@media(max-width:800px){.certa-masthead-brand{display:none}}

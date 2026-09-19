@@ -109,7 +109,7 @@ export function WeeklyPuzzleDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div className={styles.stub}><span>One puzzle.<br />One ticket per person.</span><span className={styles.perforation} aria-hidden="true" /></div>
         </div>
-        <p className={styles.ticketNote}>{reward ? 'Your answer and ticket status are saved to your account.' : 'Ticket design preview. Solve this week’s clue to claim a ticket while supplies last.'}</p>
+        <p className={styles.ticketNote}>{reward ? 'Your answer and ticket status are saved to your account.' : 'Solve this week’s clue to claim a ticket while supplies last.'}</p>
       </div>}>
     <div className={styles.content}>
         {load === 'loading' && <p role="status">Finding this week’s puzzle…</p>}
@@ -122,8 +122,8 @@ export function WeeklyPuzzleDialog({ onClose }: { onClose: () => void }) {
           <p className={styles.clue}>{puzzle.prompt}</p>
           {reward ? <div className={styles.result} role="status">
             <h3>{ticketState}</h3>
-            <p>{reward.state === 'granted' ? 'Your ticket has been issued. Prize reveal is not available here yet.' : reward.state === 'pending' ? 'Your correct answer is saved. Your ticket will appear once issuance is confirmed.' : 'Your correct answer is saved, but the ticket could not be issued yet.'}</p>
-            <button type="button" className={styles.secondary} onClick={() => void refresh()}>Refresh ticket status</button>
+            <p>{reward.state === 'granted' ? 'Your ticket is ready. Open your collection to reveal the prize.' : reward.state === 'pending' ? 'Your correct answer is saved. Your ticket will appear once issuance is confirmed.' : 'Your correct answer is saved, but the ticket could not be issued yet.'}</p>
+            {reward.state === 'granted' ? <a className={styles.primary} href="/tickets">Open your tickets</a> : <button type="button" className={styles.secondary} onClick={() => void refresh()}>Refresh ticket status</button>}
           </div> : expired || soldOut ? <div><p>{expired ? 'This puzzle has ended.' : 'All tickets for this puzzle have been claimed.'}</p><button type="button" className={styles.secondary} onClick={() => void refresh()}>Check latest puzzle</button></div> : authRequired ? <div><p>Sign in with a verified email to submit your answer.</p><div className={styles.actions}><a className={styles.primary} href="/login">Log in to play</a><a className={styles.secondary} href="/signup">Get started (Free)</a></div></div> : <form onSubmit={submit}>
             <label htmlFor="weekly-answer">Your answer</label>
             <p id="weekly-answer-hint" className={styles.hint}>{puzzle.answerLength} letters or numbers · 10 attempts per hour</p>

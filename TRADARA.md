@@ -95,6 +95,41 @@ from local record cursors.
 Missing snapshot data stays missing, not a fabricated zero balance. These GETs
 never fetch Tradara or provision accounts as a page-render side effect.
 
+### Trader dashboard projection reads
+
+- `GET /api/trading/launch`: verified customer only; one owner-scoped local
+  `ct_accounts` query selecting one ID with `lifecycle=active`. Returns only
+  `hasLiveAccount`, with no shared cache or vendor reads. The sidebar checks on
+  mount, route changes and window focus, without polling. A failed read remains
+  unknown and links to Accounts instead of presenting a purchase requirement.
+  This controls navigation copy only; Tradara still authorizes terminal access.
+
+- `GET /api/trading/dashboard?cursor=<account UUID>`: authenticated owner-scoped
+  accounts and active slots, generic compliance readiness, trading access, current
+  checkout association and canonical result events. Up to 100 archive accounts
+  plus referenced current accounts; maximum eight local database operations.
+  Commerce unavailability does not hide existing trading accounts.
+  The Accounts list also receives an allowlisted vendor account name and creation
+  timestamp from the stored account projection. These add no queries or provider
+  reads; absent/invalid creation timestamps remain null rather than using the last
+  sync time as the start date. Raw account metadata is never returned by this view.
+- `GET /api/trading/accounts/:id/activity?month=YYYY-MM&date=YYYY-MM-DD&cursor=...`:
+  selected account's stored daily report and 50 closed trades per page, in the
+  canonical `session_date`. Maximum three database operations. Decimal money stays
+  as strings. A revised report invalidates its old cursor with HTTP 409; the client
+  reloads that day's first page. Missing coverage is distinct from zero trades.
+
+Both reads use current Certa projections, private no-store responses and existing
+customer identity guards. No vendor calls or mutations occur. Reads happen on
+entry, explicit refresh, selection, pagination and debounced existing live events;
+there is no per-customer provider poll. The selected account summary/game requests
+are aborted on selection changes, and socket reconnect refetches current state.
+The activity query currently uses the existing ownership/resource indexes; before
+high-volume rollout add a reviewed compound index for user/account/kind/session
+and closed-time/id ordering. Stored `closed_at` values must use a consistent ISO
+timezone format for lexical cursor ordering; normalize historical variations
+before enabling pagination over such imports.
+
 ### Admin reads
 
 | Method | Suffix | Behavior |
@@ -322,3 +357,14 @@ checkpoints before setting the EOD trailing cap and posting a payout-marked cash
 withdrawal. `payout-reconcile` reads vendor evidence and never resends cash.
 See `PAYOUTS.md` for exact call bounds, staff permissions, recovery and sandbox gates.
 Contract-limit changes are manual. No DLL or firm-wide control is introduced.
+
+### Personal account overview snapshot
+
+Opening the shared customer/staff profile dialog reads one latest owned account
+from `ct_accounts` (ordered by vendor update time) and at most one newest `stats`
+row from `ct_records`. Both queries enforce the authenticated owner, including the
+record's account join. Maximum two trading database reads per dialog open, no
+vendor calls, polling or financial mutations. The response exposes only account
+label, validated net P&L and source timestamp. `total_net_pnl`/`net_pnl` match the
+existing dashboard fields. Missing/invalid values remain null; store failures are
+unavailable. This snapshot is labelled as an account total, never session P&L.

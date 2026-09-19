@@ -130,10 +130,11 @@ database/provider accounts. Start only the worker needed for the configured test
 environment. Message-delivery switches do not disable Tradara provisioning or
 contract creation.
 
-Current checkout processor work remains in the parent app. Authorize.net/NMI/
-NOWPayments settings and `CERTA_PAYMENT_WORKER_SECRET` are not consumed by the new
-monorepo's environment launcher. Adding them here does not connect that payment
-backend. Migrate its adapter/configuration boundary before adding its variables.
+Checkout is implemented in this monorepo. Required processor, checkout agreement,
+payment-worker and issuance settings are listed in
+[COMMERCE.md](COMMERCE.md#required-environment-and-activation-checklist). The launcher
+passes processor keys only to web; Tradara firm API credentials only to the Tradara
+worker. Creator customer discounts are configured in admin `/commerce`, not `.env`.
 
 ## 5. Admin access and auth callbacks
 
@@ -141,19 +142,27 @@ Admin uses the same Supabase project but a separate session. It has no `.env`
 admin-password setting. An existing user needs server-managed `app_metadata` with
 `role: admin`, `certa_admin` or `super_admin`, or boolean `certa_admin: true`.
 A fresh `role: super_admin` is the master role and has full feature access.
-Other staff roles require their documented feature permissions (with the trading
-read gap recorded in the backend audit). Editable `user_metadata` cannot grant access.
+Production staff without newer domain permission keys retain the deployed
+`certa_pages` policy: absent/null or `*` means full access; explicit page lists
+remain restricted. Domain permission keys, including empty arrays, take precedence.
+Restricted production grants map only to corresponding domains; a combined domain
+requires all its old pages (for example, content needs puzzle and newsletter).
+Features without an equivalent old page remain denied for restricted legacy users.
+Editable `user_metadata` cannot grant access.
 
-Master-only `/staff` uses the existing server-only `SUPABASE_SECRET_KEY` to list
-Auth users and update existing staff app metadata. The initial master must be set
-through a trusted Supabase administrative channel after confirming the exact
-account; an email string in browser code or environment is never an access grant.
-The UI can promote other staff to master and remove ordinary staff access, but
-cannot demote/remove masters or change its own access. No invitations are sent.
+`/staff` permits masters and production administrators with the `admins` page.
+It uses the server-only `SUPABASE_SECRET_KEY` and deployed `work_staff_lookup`
+RPC to load staff before pagination, rather than paginate through customer users.
+Missing RPC/configuration fails visibly. Only approved staff display fields reach
+the browser. Search filters loaded staff; batches contain up to 100 staff records.
 
-Each directory request makes one fresh identity check and one Auth Admin list call
-(maximum 100 underlying accounts); only staff records and approved display fields
-are returned. Continue pagination to find all staff; search filters loaded records.
+Production accounts are edited using `certa_pages`, preserving their permission
+model and unrelated metadata. Newer accounts retain the domain permission editor.
+These saves affect the same production project as the original app; this is not a
+mock database or a read-only preview. Only masters can promote someone to master.
+Masters and the acting account are protected from removal/demotion in this editor.
+No invitation is sent and no role is changed automatically on login.
+
 Each update performs fresh actor/target checks and one update, preserving unrelated
 app metadata. A revision detects already-stale edits, but Auth Admin has no atomic
 compare-and-swap: concurrent editors can still overwrite each other. Coordinate

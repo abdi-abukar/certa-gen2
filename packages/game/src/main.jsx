@@ -15,6 +15,17 @@ void bootstrap();
 
 async function bootstrap() {
   if(mode==='trinket'){const {showTrinket}=await import('./trinket.js');await showTrinket(query.get('model'));return;}
+  if (mode === "dashboard") {
+    document.documentElement.classList.add("climb-mode", "dashboard-mode");
+    document.body.classList.add("climb-mode", "dashboard-mode");
+    try {
+      const { default: initDashboard } = await import("./initDashboard.js");
+      initDashboard();
+    } catch {
+      window.parent.postMessage({ type: "certa:dashboard-error", code: "scene-unavailable" }, window.location.origin);
+    }
+    return;
+  }
   if (climbMode) {
     // Keep the marketing embed lean: load Kaplay climb code only.
     document.documentElement.classList.add("climb-mode");

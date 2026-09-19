@@ -4,11 +4,18 @@ import { isStaff } from '@certa/supabase/policy';
 import { isMaster, staffPermissions } from '@certa/supabase/staff-policy';
 import { serverConfig, serverSupabase } from './supabase';
 import { TradingError, type Row } from './tradara/contracts';
+import { customerSession, assertSecondFactor } from './second-factor';
 export type Principal = { id: string; staff: boolean; permissions: string[]; metadata: Row; email: string | null; emailVerified: boolean };
 export function authorized(principal: Principal, permission: string) {
   if (!principal.staff || (!isMaster(principal.metadata) && !principal.permissions.some(value=>value===`${permission.split(':')[0]}:*`||value===permission))) throw new TradingError('permission_denied',403);
 }
 export async function principal(request: Request, staff: boolean): Promise<Principal> {
+  if (!staff) {
+    const session = await customerSession(request);
+    await assertSecondFactor(session);
+    const user = session.user;
+    return { email:user.email??null,emailVerified:!!user.email_confirmed_at,id:user.id,staff:false,metadata:user.app_metadata,permissions:[] };
+  }
   const bearer=request.headers.get('authorization');
   let result;
   if(bearer) {

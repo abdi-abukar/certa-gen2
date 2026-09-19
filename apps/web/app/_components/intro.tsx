@@ -18,7 +18,7 @@ const sceneTopics = [
   { title: 'Certa Rewards', eyebrow: 'Certa Rewards', icon: 'rewards', headline: 'A new challenge each week.', copy: 'Put your problem-solving skills to the test. Open the weekly puzzle to see the current clue and available ticket rewards.', cta: 'Try the weekly puzzle', action: 'puzzle' },
 ] as const;
 
-export function Intro() {
+export function Intro({ signedIn = false }: { signedIn?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [guideChapter, setGuideChapter] = useState(0);
   const [scrolled, setScrolled] = useState(false);
@@ -100,13 +100,14 @@ export function Intro() {
         </nav>
       </div>
       <div className={styles.navActions}>
-        <AuthDialogLink mode="login" data-action="ghost" className={styles.loginButton} aria-label="Log In" title="Log In" onClick={() => setMenuOpen(false)}>
+        {!signedIn && <AuthDialogLink mode="login" data-action="ghost" className={styles.loginButton} aria-label="Log In" title="Log In" onClick={() => setMenuOpen(false)}>
           <span>Log In</span>
           <svg className={styles.loginIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5M3 12h12m-4-4 4 4-4 4" />
           </svg>
-        </AuthDialogLink>
-        <AuthDialogLink mode="signup" data-action="primary" onClick={() => setMenuOpen(false)}>Get Started</AuthDialogLink>
+        </AuthDialogLink>}
+        {signedIn ? <a href="/account" data-action="primary" onClick={() => setMenuOpen(false)}>Dashboard</a>
+          : <AuthDialogLink mode="signup" data-action="primary" onClick={() => setMenuOpen(false)}>Get Started</AuthDialogLink>}
       </div>
       <button ref={menuButton} type="button" data-action="ghost" className={styles.menuToggle}
         aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -133,9 +134,9 @@ export function Intro() {
         </h1>
         <p className={styles.heroDescription}>A clear account, straightforward rules, and a community to explore along the way.</p>
         <div className={styles.heroActions}>
-          <AuthDialogLink mode="signup" data-action="primary">Get started (Free)
+          <>{signedIn ? <a href="/account" data-action="primary">Dashboard<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 9h12m-5-5 5 5-5 5" /></svg></a> : <AuthDialogLink mode="signup" data-action="primary">Get started (Free)
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 9h12m-5-5 5 5-5 5" /></svg>
-          </AuthDialogLink>
+          </AuthDialogLink>}</>
           <button type="button" data-action="secondary" className={styles.puzzleButton} onClick={() => setPuzzleOpen(true)}>
             <span>Weekly puzzle</span>
             <span className={styles.countdown}><WeeklyPuzzleCountdown /></span>

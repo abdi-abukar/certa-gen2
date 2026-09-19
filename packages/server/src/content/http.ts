@@ -109,14 +109,17 @@ export async function contentResponse(request:Request,segments:string[],staff=fa
   try{body=object(JSON.parse(new TextDecoder().decode(await readBody(request,80000))));}catch(e){if(e instanceof TradingError)throw e;throw new TradingError('invalid_json');}
   if(!staff){
    if(path==='newsletter/subscribe'){
-    exact(body,['consent']);if(body.consent!==true)throw new TradingError('consent_required');
+    exact(body,['consent','email']);if(body.consent!==true)throw new TradingError('consent_required');
     if(!who.emailVerified||!who.email)throw new TradingError('verified_email_required',403);
+    if(body.email!==undefined && (typeof body.email!=='string' || body.email.trim().toLowerCase()!==who.email.toLowerCase()))throw new TradingError('email_mismatch');
     await rpc(db,'subscribe',{p_email:emailAddress(who.email).toLowerCase()});return reply({subscribed:true});
    }
    if(segments[0]==='puzzles'&&segments.length===3&&segments[2]==='guess'){
     exact(body,['guess']);if(!who.emailVerified)throw new TradingError('verified_email_required',403);
     const id=uuid(segments[1]);
     const result=await rpc(db,'guess',{p_user:who.id,p_id:id,p_hash:answerHash(id,string(body.guess,'guess',64))});
+    // The ticket trigger completes a newly inserted reward in the same transaction.
+    if(result.correct===true)result.reward=checked(await db.from('cn_puzzle_rewards').select('id,puzzle_id,reward_ticket_id,state,ticket_grant_id,created_at,completed_at').eq('user_id',who.id).eq('puzzle_id',id).single());
     return reply(result,result.error==='rate_limited'?429:result.error?409:200);
    }
    throw new TradingError('not_found',404);

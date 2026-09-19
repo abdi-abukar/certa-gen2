@@ -1,13 +1,24 @@
 # Certa monorepo
 
-Standalone Certa workspace for web, mobile and staff. Shared backend foundations
-cover authentication, Tradara/accounts, compliance, payouts/affiliates, Discord,
-content and awards. Checkout processors, coupons and prize tickets have existing
-implementations in the parent application awaiting migration/integration here.
+Standalone Certa workspace for web, mobile and staff. Shared backends cover
+customer authentication with email/TOTP verification, Tradara/accounts, compliance,
+payouts/affiliates, Discord, content, awards, authenticated checkout, fixed-inventory
+scratch tickets and editable transactional emails.
 
-Resend now has an email foundation: two independent templates, validated variables,
-offline previews and server-only delivery. Triggers/delivery remain disabled; live
-Supabase email delivery and customer 2FA have not been switched. See [EMAILS.md](EMAILS.md).
+The September 17 migration adapts the functional parent application's checkout,
+Authorize.net/NMI/NOWPayments processors, ticket rules and 25 email templates.
+Customer purchases require authentication and second-factor completion, with one
+active durable checkout per customer. Admin tools live at `/commerce`, `/tickets`
+and `/emails`; the trader dashboard is at `/account`, with evaluation pricing at
+`/account/evaluations` and existing checkout, tickets and security tools.
+See [AUTHENTICATION.md](AUTHENTICATION.md), [EMAILS.md](EMAILS.md) and the feature
+implementation guides for setup and deliberate differences from the original.
+
+New migrations, provider credentials, purchase terms and worker deployment require
+reviewed activation. Transactional templates are initially inactive and sending
+remains disabled by default. No live payment, email, production migration or
+hosted provider configuration is performed by local verification. The original
+instant-upgrade force-pass behavior is deliberately excluded: Tradara owns passes.
 
 Read [STRUCTURE.md](STRUCTURE.md) for the directory map and placement rules.
 [AGENTS.md](AGENTS.md) governs future implementation and migration work.
@@ -38,7 +49,9 @@ puzzle dialog. Affiliate rewards are an editorial introduction, not an activated
 affiliate workflow. The page makes no identity or vendor reads.
 
 Navigation turns white after scrolling, and the account guide remains below the
-hero. Signup and login use existing routes. The scene retains exact-origin/frame
+hero. The account guide shows evaluation essentials up front, with a left section
+menu on desktop and a swipeable top tab bar with arrows on mobile. Signup and
+login use existing routes. The scene retains exact-origin/frame
 message checks, reduced motion, hidden/offscreen pause and a static panorama
 fallback. There is no visible playback strip or hero CTA group.
 
@@ -47,6 +60,24 @@ builds. The current village and expanded feature-panel layout have not had a
 rendered browser review in this session because browser tooling is unavailable.
 Native screens and physical-device behavior are outside this change. See
 [art provenance](apps/web/app/_components/hero-art.md) and [AWARDS.md](AWARDS.md).
+
+## Shared footer
+
+Web and admin pages now end with the supplied mountain/campfire footer, including
+account tools, authentication pages and standalone checkout. The shared component
+uses DM Sans, responsive columns and the original artwork (optimized to WebP),
+with the MVP's social, support and legal links. Unmigrated information pages point
+to the existing `certafutures.com` site; customer actions stay on the current web
+origin. The footer follows the collapsed sidebar and fills the width on phones.
+
+The web newsletter form uses the existing verified-account subscription flow:
+explicit unchecked consent, an email matching the signed-in identity, pending,
+error and confirmed states, and a sign-in entry for guests. Admin links to the
+customer form. There are no identity reads or subscription writes on footer mount.
+Validation passed: 164 tests, workspace types, web/admin builds, HTTP access and
+newsletter consent/ownership/suppression checks. Synthetic Chrome checks covered
+public/auth/account/checkout/admin placement, 1440–320px widths, sidebar collapse,
+200% reflow, links, artwork and all subscription UI states. No live email was sent.
 
 ## Web dialogs
 
@@ -64,10 +95,80 @@ covered 1440px desktop, 390px mobile, 320px reflow, focus trapping/restoration,
 Escape/backdrop/close, scroll restoration, auth panel switching, 16px inputs,
 reduced motion and the puzzle's mocked empty state. Real phone keyboards and
 Safari-specific visual viewport behavior still need device verification.
-The parent app's two-page signup (personal details, then credentials/terms),
-email-code signup proof and login email/TOTP challenges are not migrated into
-these dialogs. Current live auth still uses this repo's existing foundation;
-see `EMAILS.md` for the inactive custom delivery and customer 2FA boundary.
+Customer login completes password and email/TOTP verification in the same dialog.
+Expired sessions return to that full sign-in flow; `/verify` only redirects.
+Both homepage Dashboard links require completed verification; signup takes legal name, a public @, country,
+email/password and a mailbox code before the account exists; see `AUTHENTICATION.md`. Custom delivery
+remains disabled until configured, and no live Auth settings were changed.
+
+## Trader dashboard
+
+`/account` opens the Accounts list, with current and previous accounts styled as
+compact game-save entries. Each shows its status, name and vendor-reported start
+date/age where available. Empty accounts get an illustrated purchase prompt;
+pending payment and account setup have separate states. **Purchase account** is
+the next navigation item and opens `/checkout`. Selecting an account opens its
+existing detailed dashboard, while completed accounts retain their history route.
+Verified with 156 tests, workspace type checks and web/admin production builds.
+Synthetic browser checks cover desktop (1440px), mobile (390px/320px), current and
+previous accounts, empty/returning states, payment/setup, pagination, navigation
+and error recovery. These checks do not provision accounts or make payments.
+
+`/account` now combines a cream financial dashboard with the existing Kaplay game
+engine. Select an evaluation or reserved slot to see its own balance, objectives,
+setup requirement or confirmed result. A pending account does not replace another
+account's active view. Account pricing is available beside the tabs and in the
+sidebar, using the commerce catalog. Mobile keeps objectives and the selected
+day's trades visible; the sidebar becomes a keyboard-accessible drawer.
+
+The calendar reads canonical trading sessions. Selecting a day changes the trade
+ledger, with bounded pagination and refresh recovery. History remains available
+after pass/failure acknowledgement. Compliance has one generic overview action;
+its detailed page and trading setup use their existing authenticated operations.
+Financial data and outcomes are server-owned. Animation checkpoints and result
+acknowledgements are local browser preferences, not cross-device account state.
+
+This implementation does not activate providers or import production history.
+It depends on the configured account, commerce, awards and worker projections;
+missing data is shown explicitly. High-volume trade indexes and mixed-format
+historical timestamp normalization need review before rollout (see `TRADARA.md`).
+Native Expo screens and real mobile GPU/Safari behavior remain outside this web
+implementation. See `DASHBOARD-PLAN.md` for the remaining feature roadmap.
+
+Dashboard verification: 140 regression tests, all workspace type checks, web/admin
+production builds and the isolated HTTP authentication/access suite pass. Browser
+review uses synthetic account/catalog fixtures with real built pages and WebGL;
+Desktop 1440px and mobile 390px/320px checks cover account-state isolation,
+calendar day selection, result dismissal/focus, sidebar navigation and catalog-to-
+checkout selection. They do not verify production vendor data or perform purchases.
+
+## Checkout experience
+
+Overview now saves a creator code for future evaluations. The cream checkout
+supports server-priced creator/coupon/ticket discounts, billing and agreement
+consent, NMI/Authorize.net card tokenization, NOWPayments invoices, free orders,
+saved checkout history and per-purchase account issuance. The server chooses the
+card processor; only an explicit retry after a confirmed decline can try another.
+Payment confirmation never implies the evaluation has already been issued.
+
+Checkout includes compact recording/refund disclosures and an expandable $1,500
+end-of-day MLL explanation before Continue. The connected database still needs
+the checkout-experience migration, products, approved plans and enabled processor
+routing; see [the checkout activation diagnosis](COMMERCE.md#required-environment-and-activation-checklist).
+This disclosure/error update passes 155 tests, workspace type checks, the web
+production build and disposable database/concurrency tests. An isolated browser
+preview verified 1440px, 390px and 320px layouts, keyboard expansion, retained form
+values and missing-schema recovery using synthetic responses, without payments.
+
+Verification: 145 tests, workspace type checks, web/admin builds, isolated HTTP
+authorization checks and the full disposable PostgreSQL/concurrency fixture pass.
+Browser review covers 1440px desktop, 390px/320px mobile, 200% equivalent reflow,
+creator persistence, better-discount retention, both mocked card tokenizers,
+declines, pending Crypto, free purchases, reload and mixed issuance states.
+Processor responses are fixtures; merchant sandbox, physical-device and production
+payment/issuance verification remain external. No real charges or new live
+migration were performed. See [COMMERCE.md](COMMERCE.md#required-environment-and-activation-checklist)
+for the required environment, new migration and worker/processor activation.
 
 ## Start locally
 
@@ -242,10 +343,11 @@ database policy audit, and signed native builds remain deployment/integration ch
 
 Feature-specific sections below document the implemented server domains. Contracts,
 Tradara, Discord and content have runnable worker services. API-watch is still an
-inventory placeholder. The parent application's payment APIs, checkout sessions,
-coupons and ticket logic are existing work to adapt to this workspace's account and
-event model; they are not connected by starting the browser apps. UI completeness
-is separate from backend implementation status.
+inventory placeholder. Checkout, payment processors, coupons and fixed-inventory
+tickets are now adapted into shared owners; read `COMMERCE.md`, `TICKETS.md`,
+`EMAILS.md` and `AUTHENTICATION.md`. Apply the reviewed migrations and configure
+providers/workers before activation. Starting browser apps alone does not activate
+background payment recovery or email delivery.
 
 ## References
 
@@ -343,10 +445,12 @@ Implemented in [CONTENT.md](CONTENT.md): saved React email templates, preview/re
 APIs, normalized storage image uploads, staff-triggered Claude drafting, immutable
 Go live audience queue, Resend worker, signed delivery webhooks and unsubscribe.
 Weekly Sunday 5 PM Toronto puzzles have atomic limited claims and a durable ticket
-reward outbox; the ticket agent plugs its issuer into `@certa/server/puzzle-rewards`.
+reward ledger; the ticket migration now issues from exact inventory atomically and
+`@certa/server/puzzle-rewards` recovers historical pending grants idempotently.
 Run `pnpm newsletter:preview` for synthetic files and `pnpm dev:content` for the
-worker. Sending defaults off. UI editors, ticket issuer connection, production
-migration baseline reconciliation and live vendor activation remain external setup.
+worker. Sending defaults off. The UI editors and ticket issuer are connected in
+code; production migration baseline reconciliation and live vendor activation
+remain external setup.
 
 Content verification: the current 82-test suite, workspace typechecks, both production
 builds and local HTTP authorization fixtures pass. Puzzle customer/staff flows were
@@ -384,19 +488,156 @@ issued ticket until the backend confirms it.
 
 ## Staff management
 
-Admin `/staff` lets master administrators browse existing staff, edit feature
-permissions, promote a staff member to master, or remove ordinary staff access.
-`super_admin` now has full feature access; ordinary staff still need the existing
-domain permissions. Desktop navigation uses a sidebar and mobile uses a top-bar
-accordion. Master accounts are protected from removal/demotion in this editor.
-
-Requires the server-only `SUPABASE_SECRET_KEY`. The current local environment lacks
-that key, so no live account was promoted. The intended master email also needs
-confirmation; no email-based authorization bypass was added. See `ENVIRONMENT.md`.
-Validation: 84 unit tests, workspace typechecks, both app builds, and real Next
-HTTP fixtures pass, including master revocation, denied role updates, protected
-masters and content access. No production roles or database migrations changed.
+Admin `/staff` uses the production staff lookup and honors existing production
+page grants alongside newer domain permissions. Staff managers can edit existing
+accounts in their original permission format; saves affect production. Only masters
+can promote to master, and self/master accounts are protected in this editor.
+The server-only `SUPABASE_SECRET_KEY` and deployed `work_staff_lookup` RPC are
+required. See `ENVIRONMENT.md` for permission compatibility and revision limits.
+No production account is automatically promoted and no email grants access.
 
 Staff browser verification used synthetic accounts against the real Auth Admin
 fixture: saving permissions, revocation, desktop and 390px/320px layouts, and mobile
 menu Escape/focus behavior passed. Live role administration remains unverified.
+
+Staff login, recovery and reset pages now use cream surfaces, local DM Sans and
+dialog-style inputs with a password visibility control. Verification passed for
+152 tests, workspace typechecks, the admin build and HTTP auth fixtures. Browser
+checks covered desktop/390px/320px layouts, invalid-password feedback, recovery
+navigation and successful sign-in using synthetic staff credentials.
+
+Admin `/traders` now supports paginated customer search and **Log in as user**.
+The action copies a five-minute, single-use link to paste into an Incognito/private
+window, where it opens a 30-minute customer support session. Browsers require the
+operator to open the private window manually. Existing customer cookies are never
+replaced, the admin stays signed in, and the customer shell identifies support
+access with an end-session action. Password and authenticator changes are blocked.
+Master admins, compatible legacy Users grants, or explicit `support:read` and
+`support:login` permissions authorize this flow. See `AUTHENTICATION.md` for the
+fresh permission checks, session binding and logging boundaries. No new migration
+or environment key is required and no production role was changed.
+
+Support access verification: 159 tests, workspace typechecks, both application
+builds and the real Next HTTP fixture suite passed. Synthetic Chromium checks
+cover search, copy, keyboard focus, 1440/390/320px layouts, private-context login,
+security restrictions, local logout, preserved admin login and single-use replay
+rejection. Real customer impersonation has not been performed.
+
+## Local session recording
+
+Opening an account places Start recording below its overview and trading activity.
+The account list, no-account welcome and unissued slots do not offer recording;
+an already-started capture keeps its controls when navigating within the account area.
+Buy account and its expandable creator-code control sit at
+the top beside Overview, keeping the balance and game journey in focus. The browser asks the user
+to select a tab, window or screen; the dashboard shows elapsed time and retains
+up to ten minutes of video locally. Save clip exports the available last 1, 5 or
+10 minutes as a WebM, with a download link and preview. Saving continues capture;
+Stop releases capture and keeps the buffer available until Clear recording.
+
+Desktop Chrome/Edge with WebCodecs and Window track processing is the initial
+target. This version is video-only. Keep the dashboard tab open: navigating
+between `/account` pages preserves capture, but leaving the account area, signing
+out, refreshing or closing the tab releases it and clears undownloaded footage.
+Retention starts on key frames and is capped at 128 MiB, so clips may be slightly
+shorter than the selected duration. Browser or OS suspension can interrupt capture.
+No recordings are uploaded, stored in the database or sent to Tradara.
+
+Overview layout verification: synthetic browser checks passed at 1440, 900, 700,
+390 and 320px, including creator-code add/error/remove, long codes, full-slot and
+resumed-checkout states, enlarged layout, and recording persistence across routes.
+The 155 tests, workspace typechecks and web production build also passed.
+
+Verification: 152 tests, workspace typechecks, web/admin builds and the real Next
+HTTP fixture suite passed. Chromium checks covered real VP8 encoding, WebM
+playback, permission cancellation, account-route persistence, stop/save, external
+capture termination, teardown and 1440/390/320px layouts. A timestamped 12-minute
+synthetic session produced 600-second and 60-second clips that fully decoded in
+FFmpeg. The authenticated built dashboard also passed local preview playback under
+its CSP. Native OS source selection and a real Tradara session remain manual checks;
+automated capture used synthetic video and synthetic authenticated accounts.
+
+### Shared client and staff account menu
+
+Both workspaces now use the same cream sidebar and responsive navigation drawer.
+Their pixel-character account entry opens a common profile dialog with the saved
+avatar, production username, identity/sanctions status and character colour editing.
+Compliance, Discord, security and support continue through their existing customer
+routes; staff links use the configured client origin and its own sign-in session.
+This does not add staff MFA, migrate signing flows or change compliance decisions.
+The profile endpoint reads the actor’s username and compliance status, plus one
+latest owned trading account and its latest statistics snapshot per opened dialog;
+colour saves read and update only the authenticated actor's Auth user metadata.
+Unavailable records produce an error, never a fabricated approved status.
+
+Validation for shared navigation/profile: 155 tests, workspace types, both builds,
+HTTP ownership/mutation checks and Chromium at 1440/390/320px passed. Browser checks
+covered collapse persistence, character saves/reloads, mobile drawer and nested
+profile Escape/focus restoration. Production table/column availability was checked
+read-only; all test mutations used the local synthetic Auth fixture.
+
+The account dialog now opens on a welcome overview with a compact tab sidebar.
+Session details, compliance, character, security, Discord and support have separate
+panels. Desktop keeps navigation left/content right; mobile uses a bottom sheet
+with horizontally scrollable tabs. P&L is the latest recorded total for one named,
+owned account, with its snapshot timestamp—not a live/session total or a portfolio
+sum. Missing or invalid statistics display an unavailable state rather than zero.
+
+The account landing page uses the supplied three-card layout on desktop and a
+swipeable perspective stack on phones. Swipe left/right to cycle the slots; small
+dots show the position, with no arrow buttons or autoplay. Reduced motion makes
+swaps instant. Keyboard arrows and an accessible native slot picker provide
+alternatives to swiping, and only the front card's actions are focusable on phones.
+With no accounts,
+the first slot has the journey welcome and purchase/rules controls; the other two
+use identical plus-sign artwork. Issued and reserved accounts replace those cards
+using confirmed status and allocation. Unknown capacity has a checking state,
+previous evaluations stay below, and financial details remain inside Open account.
+The header omits a duplicate purchase action and recording stays inside an opened
+account. No reference balances, returns or payout-day examples are shown as real data.
+The artwork lives in `apps/web/public/account/`; scoped markup/styles and slot
+presentation remain beside the account list, with no extra API or vendor reads.
+The earlier root `certa_first_segment` source was removed after rendered review.
+Validation: 164 tests, workspace typechecks and the web build passed. Synthetic
+Chrome checks cover 1440/900/760/390/320px, zero through three accounts, setup and
+capacity updates, touch swipes in both directions, wraparound, native vertical
+scroll, purchase taps, swipe-on-link suppression, keyboard selection, reduced
+motion, live resizing and 200% reflow. Earlier card checks covered invitations,
+history and load errors. No extra dashboard reads occur when cycling slots.
+Physical-phone and Safari behavior have not been verified.
+
+The customer sidebar places Trophy Cabinet after Affiliates and uses a banknote
+icon for Trader Payouts. An icon-only midpoint control collapses the desktop rail.
+The “Trade on Tradara” action uses the original mark and green: active accounts
+open `https://terminal.tradara.com`; no active accounts lead to checkout. A compact
+sign-out icon sits beside it in the sidebar and mobile drawer; the collapsed rail
+stacks the two icons. Trading Terminal and Merch Store are removed from customer
+navigation.
+An unavailable lookup leads to Accounts. The authenticated launch check reads only
+one owned active account from the local database, without vendor calls.
+Validation: 164 tests, workspace typechecks and web/admin builds passed. Synthetic
+browser checks covered navigation order, collapse keyboard/persistence, desktop
+and 390/320px mobile layouts, loading/live/empty/error launch states, checkout
+navigation, and the inline sign-out button ending synthetic sessions on desktop
+and mobile. The staff footer retains its profile and labelled sign-out control.
+No real payment or terminal actions were performed.
+The launch hook keeps its request key internal. A React development-mode check
+reproduced the former JSX key-spread warning and verified its removal across live,
+empty and unavailable states, focus refreshes and user/navigation changes.
+
+The supplied “Trade together. Go further.” masthead appears on every customer/staff
+sidebar page and standalone checkout. Customer pages align it with the saved
+character and a personalized welcome, with a divider beneath. On Accounts, this
+replaces the separate heading below the artwork. The portrait opens the existing
+account dialog and replaces the desktop sidebar's profile entry; the mobile drawer
+retains its profile entry. The greeting uses the verified identity already loaded
+by the route, with a handle or generic welcome when a name is absent.
+The original artwork lives in each app's `public/brand/`, with one shared component
+in `@certa/ui-web/page-masthead`. At 800px and below only the decorative artwork
+disappears; the welcome and character remain. There are no new API reads or fonts.
+Validation: 164 tests, workspace typechecks and web/admin builds passed. Synthetic
+Chrome checks covered the inline banner at 1440/1024/900/801/800/390/320px, saved
+character updates and reloads, keyboard dialog access and focus restoration,
+mobile drawer access, sidebar collapse, checkout/account tools, long/missing names
+and 200% zoom. Earlier checks covered nine customer/checkout routes and ten staff
+routes, checkout loading errors and back navigation. No payment was submitted.

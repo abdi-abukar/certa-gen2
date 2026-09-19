@@ -1,0 +1,55 @@
+.page { max-width: 1160px; margin-inline: auto; padding-block: 8px 32px; color: #111713; }
+.page a { text-decoration: none; }
+.page :focus-visible { outline: 2px solid #183f2d; outline-offset: 4px; }
+.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 20px; color: #5b665e; font-size: 14px; font-weight: 550; }
+.heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px; padding-bottom: 32px; border-bottom: 1px solid #dfe3d8; }
+.heading h1 { margin: 0 0 12px; font-size: clamp(28px, 3.2vw, 38px); line-height: 1.15; letter-spacing: -1.3px; font-weight: 650; }
+.page p { margin: 0; color: #5b665e; font-size: 15px; line-height: 1.65; }
+.page .primary, .page .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 12px 16px; border: 1px solid transparent; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 600; line-height: 1.4; white-space: nowrap; cursor: pointer; }
+.page .primary { color: #faf9f5; background: #183f2d; border-color: #183f2d; }
+.page .primary:hover { background: #285c3c; }
+.page .secondary { color: #183f2d; background: transparent; border-color: #bac5b8; }
+.page .secondary:hover { background: #edf0e7; }
+.guideLink { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; width: fit-content; color: #345a41; font-size: 14px; font-weight: 600; }
+.guideLink:hover, .back:hover { text-decoration: underline; text-underline-offset: 4px; }
+.savedCheckout { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 24px; margin-top: 28px; background: #edf1e6; border-radius: 8px; }
+.savedCheckout strong { display: block; margin-bottom: 4px; font-size: 15px; font-weight: 600; }
+.savedCheckout p { font-size: 14px; }
+.products { margin-top: 8px; }
+.product { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, auto) auto; align-items: center; gap: 32px; padding: 36px 0; border-bottom: 1px solid #dfe3d8; }
+.productName { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.productMark { display: grid; place-items: center; flex: 0 0 56px; width: 56px; height: 56px; border-radius: 10px; background: #e9eee0; color: #345a41; }
+.product h2 { margin: 0 0 6px; font-size: 23px; font-weight: 600; line-height: 1.25; letter-spacing: -.6px; overflow-wrap: anywhere; }
+.productName p { font-size: 14px; }
+.price { display: grid; gap: 4px; }
+.price strong { font-size: 32px; font-weight: 600; letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.price span { color: #5b665e; font-size: 13px; }
+.guidance { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; margin-top: 48px; padding: 28px 32px; background: #f0f1e9; border-radius: 10px; }
+.guidance h2 { margin: 0 0 12px; font-size: 22px; font-weight: 600; letter-spacing: -.5px; line-height: 1.25; }
+.guidance h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; line-height: 1.4; }
+.guidance .guideLink { margin-top: 12px; }
+.purchaseNote { border-left: 1px solid #d6decf; padding-left: 32px; }
+.loading, .empty { padding: 44px 0; color: #5b665e; font-size: 15px; }
+.empty h2 { margin: 0 0 10px; color: #111713; font-size: 24px; letter-spacing: -.6px; }
+.empty .secondary { margin-top: 24px; }
+@media (max-width: 1150px) and (min-width: 900px), (max-width: 780px) {
+  .product { grid-template-columns: minmax(0, 1fr) auto; gap: 24px; }
+  .product .primary { grid-column: 1 / -1; width: 100%; }
+  .price { text-align: right; }
+}
+@media (max-width: 600px) {
+  .page { padding-top: 0; }
+  .heading { gap: 12px; padding-bottom: 24px; }
+  .heading h1 { margin-bottom: 10px; }
+  .back { margin-bottom: 12px; }
+  .savedCheckout { align-items: flex-start; flex-direction: column; padding: 20px; gap: 16px; }
+  .product { padding-block: 28px; gap: 20px; }
+  .productName { gap: 12px; }
+  .productMark { width: 42px; height: 42px; flex-basis: 42px; border-radius: 8px; }
+  .product h2 { font-size: 20px; }
+  .price strong { font-size: 28px; }
+  .price span { font-size: 12px; }
+  .guidance { grid-template-columns: 1fr; gap: 28px; padding: 24px 20px; margin-top: 32px; }
+  .purchaseNote { padding: 24px 0 0; border: 0; border-top: 1px solid #d6decf; }
+}
+@media (max-width: 360px) { .productMark { display: none; } .product { gap: 16px; } }

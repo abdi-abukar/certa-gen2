@@ -1,36 +1,30 @@
 .shell { --forest:#06130d; --pine:#123522; --ivory:#f6f3e9; --gold:#d8b86d; min-height:100svh; background:var(--ivory); color:var(--forest); }
 .navigation { position:fixed; inset:0 auto 0 0; width:232px; padding:32px 20px; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--forest); color:var(--ivory); border:0; z-index:30; }
 .brand { display:flex; align-items:center; gap:12px; color:var(--ivory); text-decoration:none; font-size:27px; font-weight:700; padding:0 8px 36px; }
-.brand svg { color:var(--gold); flex-shrink:0; }
+.brand img { flex-shrink:0; border-radius:50%; }
 .brand small { display:block; margin-top:4px; font-size:12px; font-weight:400; color:#b7c4b6; }
-.links { display:grid; gap:6px; }
-.links p { font-size:12px; color:#b7c4b6; margin:4px 12px 12px; }
-.links a { display:flex; align-items:center; gap:12px; min-height:48px; padding:10px 12px; color:var(--ivory); text-decoration:none; font-size:14px; border-radius:8px; }
-.links a span { font-size:11px; color:#b7c4b6; font-variant-numeric:tabular-nums; }
-.links a:hover { background:var(--pine); }
-.links a[aria-current] { background:var(--gold); color:var(--forest); font-weight:600; }
-.links a[aria-current] span { color:var(--forest); }
-.footnote { margin:auto 12px 0; padding-top:32px; color:#b7c4b6; font-size:14px; line-height:1.6; }
 .shell .workspace { width:auto; min-width:0; max-width:none; margin:0 0 0 232px; padding:40px clamp(20px,3vw,48px); }
 .workspace > :global(.card) { max-width:640px; margin:24px auto; }
-.toggle { display:none; }
 .skip { position:fixed; top:-100px; left:248px; padding:12px; background:white; z-index:100; }
 .skip:focus { top:8px; }
 .navigation :focus-visible { outline:2px solid var(--gold); outline-offset:4px; }
-.shell[data-auth=true] .navigation { position:static; width:auto; padding:24px; }
-.shell[data-auth=true] .brand { padding:0; }
-.shell[data-auth=true] .workspace { margin:0 auto; max-width:560px; padding-top:8vh; }
+.shell[data-auth=true] { background:#faf9f5; font-family:var(--staff-font),Arial,sans-serif; }
+.shell[data-auth=true] .navigation { position:static; width:auto; padding:24px clamp(20px,4vw,56px); background:transparent; border-bottom:1px solid #dfe3d8; }
+.shell[data-auth=true] .brand { padding:0; color:var(--forest); font-size:20px; letter-spacing:-.5px; }
+.shell[data-auth=true] .brand small { color:#465447; font-size:12px; font-weight:500; letter-spacing:0; }
+.shell[data-auth=true] .navigation :focus-visible { outline-color:#285c3c; }
+.shell[data-auth=true] .workspace { margin:0 auto; width:100%; max-width:520px; padding:clamp(40px,8vh,88px) 24px 48px; }
+.shell[data-auth=true] .workspace > :global(.card) { margin:0; padding:32px; border:0; border-radius:12px; background:var(--ivory); }
+.shell[data-auth=true] .workspace h1 { margin:0 0 12px; color:var(--forest); font-size:32px; font-weight:650; line-height:1.15; letter-spacing:-1px; }
+.shell[data-auth=true] .workspace > :global(.card) > p { color:#465447; font-size:15px; line-height:1.55; margin:0; }
+.shell[data-auth=true] .workspace > :global(.card) > a { display:inline-block; margin-top:20px; font-size:13px; font-weight:650; }
 @media(max-width:800px) {
  .navigation { position:sticky; inset:auto; width:auto; padding:16px 20px; flex-direction:row; align-items:center; flex-wrap:wrap; gap:16px; }
  .brand { font-size:23px; padding:0; margin-right:auto; }
  .brand small { font-size:11px; }
  .brand svg { width:28px; height:28px; }
- .toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; background:var(--pine); border:1px solid #70856f; color:var(--ivory); border-radius:8px; padding:8px 12px; font-size:13px; }
- .toggle span { font-size:20px; }
- .links { display:none; width:100%; max-height:calc(100svh - 112px); overflow-y:auto; padding-top:12px; border-top:1px solid #70856f; }
- .links[data-open=true] { display:grid; }
- .footnote { display:none; }
  .shell .workspace { margin:0; padding:28px 20px 48px; }
  .skip { left:20px; }
 }
 @media(max-width:360px) { .navigation { padding:12px; gap:8px; } .toggle { font-size:12px; padding:8px; } .shell .workspace { padding:24px 16px; } }
+@media(max-width:520px) { .shell[data-auth=true] .workspace { padding:36px 16px; } .shell[data-auth=true] .workspace > :global(.card) { padding:24px 20px; } .shell[data-auth=true] .workspace h1 { font-size:28px; } }

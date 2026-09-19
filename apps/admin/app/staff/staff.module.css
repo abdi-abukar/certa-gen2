@@ -25,7 +25,7 @@
 .group { padding:20px 0; border-bottom:1px solid #bdc6b9; }
 .group h3 { font-size:16px; margin:0 0 16px; }
 .group > div { display:flex; gap:12px 24px; flex-wrap:wrap; }
-.group label,.confirm { display:flex!important; align-items:center; gap:8px!important; min-height:44px; }
+.groups > label,.group label,.confirm { display:flex!important; align-items:center; gap:8px!important; min-height:44px; }
 .console input[type=checkbox] { width:18px; height:18px; accent-color:#123522; flex-shrink:0; }
 .confirm { margin-top:24px; line-height:1.6; }
 .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }

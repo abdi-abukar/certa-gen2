@@ -8,11 +8,18 @@
   },
   "exports": {
     "./auth-panel": "./src/auth-panel.tsx",
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./account-shell": "./src/account-shell.tsx",
+    "./page-masthead": "./src/page-masthead.tsx",
+    "./site-footer": "./src/site-footer.tsx",
+    "./responsive-dialog": "./src/responsive-dialog.tsx",
+    "./dialog-scroll": "./src/dialog-scroll.ts",
+    "./account-menu": "./src/account-menu.tsx"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",
-    "@certa/supabase": "workspace:*"
+    "@certa/supabase": "workspace:*",
+    "@certa/game": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.2.3",

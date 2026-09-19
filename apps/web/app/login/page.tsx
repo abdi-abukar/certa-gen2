@@ -1,2 +1,9 @@
-import { AuthForm } from '../auth-form';
-export default function Login() { return <section className="card"><h1>Sign in</h1><p>Welcome back to Certa.</p><AuthForm mode="login" /><div className="links"><a href="/forgot-password">Forgot password?</a><a href="/signup">Create an account</a></div></section>; }
+import { redirect } from 'next/navigation';
+import { hasCustomerSession } from '@certa/server/auth';
+import { AuthPage } from '../_components/auth-page';
+import { Intro } from '../_components/intro';
+export const metadata = { title: 'Sign in' };
+export default async function Login() {
+  if (await hasCustomerSession()) redirect('/account');
+  return <><Intro /><AuthPage mode="login" dialog /></>;
+}

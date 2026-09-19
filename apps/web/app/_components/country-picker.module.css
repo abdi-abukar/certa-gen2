@@ -1,0 +1,7 @@
+.picker { position: relative; display: block; }
+.flag { position: absolute; z-index: 1; top: 50%; left: 14px; transform: translateY(-50%); font-size: 18px; line-height: 1; pointer-events: none; }
+.picker select { width: 100%; min-height: 48px; padding: 12px 38px 12px 14px; border: 1px solid #70856f; border-radius: 6px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2306130d' stroke-width='1.6'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center; color: #06130d; font: inherit; font-size: 16px; line-height: 1.5; appearance: none; }
+.picker select[data-filled='true'] { padding-left: 42px; }
+.picker select:invalid { color: #6b7a6e; }
+.picker select:focus-visible { border-color: #285c3c; outline: none; box-shadow: 0 0 0 3px #285c3c22; }
+.picker select:disabled { opacity: .55; }

@@ -85,6 +85,99 @@ Seasonal lantern orange and autumn foliage are campaign accents. They may replac
 the decorative accent within a scoped campaign, but must preserve action clarity,
 focus and status meanings. Halloween is one reference, not the permanent theme.
 
+### Shared illustrated footer
+
+Public, authentication, checkout, customer and staff pages end with the supplied
+`certa_footer_html (1)` landscape. Rebuild the brand, link columns and newsletter
+in native HTML and the app's DM Sans; only the logo and panorama are images.
+Use fine sage dividers, cream surfaces, forest actions and at least 44px targets.
+The panorama already includes “Same traders. Bigger futures.”, so do not duplicate
+that signature in HTML. Keep the artwork after the legal links/disclosure at the
+bottom. Lazy-load it at its original aspect ratio without cropping the character
+and signs. Container queries adapt to the available width beside the sidebar;
+collapsed and mobile rails must never cover the footer. Newsletter consent starts
+unchecked, with visible submitting, success, sign-in and recoverable error states.
+
+### Trader dashboard light surface
+
+The customer landing page is **Accounts**: three illustrated slot cards, using the
+supplied account-block reference, with a compact history list below. Desktop has
+three columns; tablets use two, and phones use a perspective stack. Swipe left or
+right to cycle slots, with a spring settling each card into place and a small dot
+indicator below. There are no arrow buttons or automatic advances. Vertical scroll
+and account taps stay native; reduced motion makes swaps instant. Keyboard users
+can focus the stack and use arrow keys; a native slot picker is also available to
+assistive technology and appears on keyboard focus. Only the front card is
+interactive on phones. Each occupied card shows its
+actual account name, lifecycle/setup status and elapsed start age when available,
+with Open account leading to financial details. Sample reference balances, profits
+and payout days are not account data. Start age is not qualifying trading days.
+
+For a new customer, slot one keeps the supplied first-visit illustration, welcome,
+Buy your first account and Account rules; slots two and three use the same muted
+mountain/plus-sign artwork. The artwork fills most of each card. Empty slots have
+a dashed border and purchase action, while reserved/setup slots keep their real
+state. Counts come from confirmed allocation; unknown capacity gets a checking
+card and over-capacity exceptions must never hide a real account. Omit a duplicate
+header purchase action and keep recording off the slot grid. Returning traders get
+next-account wording above their history. Keep the light cards and forest actions
+within the existing DM Sans account shell.
+Payment confirmation and setup problems stay distinct from evaluation failure.
+**Purchase account** sits directly below Accounts in navigation and opens the
+standalone checkout. Opening an account retains the detailed financial dashboard.
+
+Sidebar community order is Trader Payouts (banknote), Affiliates, Trophy Cabinet.
+Collapse is an icon-only chevron at the midpoint of the desktop sidebar's right
+edge, with a 44px hit area and an accessible expand/collapse label. The customer
+sidebar and mobile drawer offer a Tradara green (`#45C28D`) action with the existing
+Tradara T mark and “Trade on Tradara” label. It opens `https://terminal.tradara.com`
+in a new tab for an active account; confirmed absence links to checkout. An
+icon-only sign-out button sits alongside it, with a 44px target and an accessible
+label. The collapsed desktop rail stacks the two icons. Loading and unknown
+account state do not claim the trader has no accounts.
+
+Customer sidebar pages and standalone checkout pair the supplied “Trade together.
+Go further.” masthead with a personalized welcome on the same row. A portrait of
+the customer's saved character opens their account settings; the greeting uses
+their first name, then their handle, or “Welcome back.” when neither is available.
+The Accounts landing page uses this as its main heading, with Accounts as a small
+eyebrow and “Pick up where you left off.” beneath the greeting. Remove the separate
+Accounts heading below it. A fine divider separates the banner from the cards.
+The portrait replaces the desktop sidebar's account entry; keep sign-out there
+and the existing profile entry in the mobile drawer. Staff keeps its sidebar entry
+and decorative masthead. Keep the original artwork and lettering together at
+260–375px wide, hidden from assistive technology. At 800px and below, hide only the
+decorative artwork; the welcome, portrait and page title remain available.
+
+The overview places its compact sage recording bar below the dashboard content,
+keeping account selection, balance and the mountain journey first. Offer recording
+only after opening a resolved account, never an empty or unissued slot. An existing
+capture or retained clip keeps its controls across account routes. After explicit
+browser source selection, it shows recording/waiting/stopped text, elapsed time,
+available footage, 1/5/10-minute clip choices, Save and Stop. The bar remains visible
+across account routes while footage is held. Downloads and an optional preview stay
+local; video-only capture and the need to keep the dashboard tab open are stated
+before starting. Unsupported browsers get a desktop Chrome/Edge explanation.
+
+The combined `/account` dashboard uses the approved cream treatment: paper
+`#FAF9F5`, ink `#17221B`, secondary text `#68716A`, forest actions `#234C35`,
+and a pale sage ledger `#EEF0E8`. These roles are owned by the account shell and
+its scoped modules. Keep this light surface across account tools and evaluation
+pricing. Public art stages retain their existing palette.
+
+The heading pairs Overview with a prominent forest Buy account action and a compact
+creator-code disclosure directly beneath it. The code editor opens on demand; only
+server-confirmed codes and discounts are shown. Pricing, history and refresh stay
+in the account-selection row. The selected account leads: tabs, balance
+and risk figures beside one horizontal Kaplay journey, then objectives, a selected
+trading day, and that day's trades. Desktop places the calendar beside objectives;
+phone reading order puts objectives first. Shading groups the ledger; financial
+facts stay open on the cream canvas. Sidebar navigation collapses on desktop and
+opens as a modal drawer on phones. Compliance has one generic dashboard action.
+Pending issuance and outcomes belong to the selected evaluation or reserved slot.
+Scene movement uses confirmed progress and a browser observation checkpoint;
+it never decides a pass, failure, issuance or eligibility.
+
 ### Typography
 
 **DM Sans is the rebuild's default UI and display family**, chosen from the HTML
@@ -200,6 +293,10 @@ hovering a panel pauses the scene until pointer leave. Panel text wraps on mobil
 no visible pause control. Reduced motion and offscreen/hidden pause remain.
 Navbar labels use title case: Account Rules, Live Trader Progress, Customer Support,
 Certa Sundays, Bug Reports, Log In and Get Started.
+For a server-validated customer session with completed second factor, the navbar
+hides Log In and both navbar and hero replace Get Started with Dashboard linking
+to `/account`. Expired verification returns to the full login dialog. Guest and invalid sessions keep
+the existing auth actions; guests without a session cookie cause no auth lookup.
 At 700px and below, the header shows the crest, compact Certa Futures title,
 login icon, Get started, and an icon-only menu button in one row. Auth actions
 sit outside the menu. Wider navigation stays unchanged.
@@ -230,7 +327,11 @@ Other decorative panels are hidden by default. Opening takes 200ms and
 closing 160ms, with reduced motion disabling both. Use the native modal top layer
 for focus trapping and background inertness, restore focus/scroll on dismissal,
 and focus the heading initially so opening does not summon a phone keyboard.
-Inputs, selects and textareas are 16px minimum. The sheet tracks the visual
+Inputs, selects and textareas are 16px minimum. The shared text-field skin in
+`packages/ui-web/src/styles.css` excludes checkboxes and radios, which keep the native
+control and take only the brand accent: padding meant for a text field collapses a 20px
+box. When checking a form's layout, load that stylesheet and `globals.css` alongside the
+module, or the global rules that actually style the control are invisible. The sheet tracks the visual
 viewport in a full-screen native dialog shell and respects bottom safe-area padding.
 Only the inner content scrolls; the close button remains accessible. Lock both root
 and body scrolling, block single-finger scroll chaining at sheet edges, and restore
@@ -239,8 +340,25 @@ the visual viewport to avoid transparent keyboard/safe-area gaps. Preserve pinch
 Native iOS keyboard and toolbar behavior still requires a physical-device check.
 
 Signup, login, recovery and the weekly puzzle share this shell. Auth uses the
-existing village artwork in an editorial community panel with a brief entrance
-reveal; puzzle uses its ticket artwork. Keep feature operations outside the shell. DM Sans is loaded once by the
+existing village artwork in an editorial panel that explains the moment: the
+signup panel carries the headline plus four perks taken from the firm's own perk
+list (100% payout split, no daily loss limit, no consistency rules, no activation
+fee), each with a gold line icon from `village-graphic.tsx`; login welcomes the
+trader back, and recovery explains the reset link. Perk icons join the existing
+icon set rather than starting a second one, and keep its 64 viewBox, 2.5 stroke
+and round joins. As the panel shortens the landscape band yields first, then the
+perk details, then the fourth perk, so copy never sits on bright sky. Signup is paginated into three short forms, but
+the form column shows no step heading, progress bar or subtitle: the fields say
+where you are. The step number stays in a visually hidden heading that takes focus
+on each change, so it is still announced. Legal first and last name share one row
+at every width, and so do the public @ and country of residence, with the @ hint
+below the pair. Country of residence is the platform select at every width, which
+already searches a long list by keystroke; there is no custom combobox. The
+"Already have an account?" link shares one row with the step's back control, and login
+shares its row with "Forgot password?". Signing in does not leave the dialog: once the
+password is accepted the same panel shows the six-digit code step, which requests the code
+on open and offers a resend with a countdown.
+Puzzle uses its ticket artwork. Keep feature operations outside the shell. DM Sans is loaded once by the
 web root layout so portal-mounted dialogs inherit the same typography.
 
 ## Motion and the game world
@@ -331,3 +449,67 @@ The initial panorama is a preloaded static image behind the game frame. Reveal t
 hero content once the background or scene is ready, with image-error and two-second
 timeout fallbacks and a no-JavaScript text fallback. Do not gate account access on
 scene loading.
+
+### Public account rules guide
+
+The account guide is a forest stage with one game gesture: a horizontal stage
+trail. Evaluation, Certified Funded, Max Drawdown and Firm Rules are numbered
+stages on a path; the reached part of the path and the selected node turn gold,
+a “Stage n of 4” counter sits beside the heading, and the village character
+sprite (`/game/characters-black-hair.png`, CSS sprite, pixelated) walks to the
+selected stage over 420ms using the game's walk frames. Reduced motion moves it
+instantly with no walk cycle. The trail scrolls horizontally on narrow screens
+and keeps the selected tab in view without moving the page; keyboard arrows,
+Home and End move between stages at every width.
+Content sits on a raised pine panel: a forest account/fee summary, three
+target/drawdown/position tiles, and evaluation/firm rules. The evaluation stage
+draws one “run” bar from the $50,000 start with the $48,500 floor and $53,000
+target, labelled as illustration. The drawdown tile opens Max Drawdown through
+“Learn more”; the worked example stays in that section. The fee summary shows
+$150 struck through beside $120, with a mystery coupon showing the minimum 20%
+discount and checkout reveal copy. These coupon figures are preview presentation
+only. Previous/Next stage buttons close the panel; the last stage shows a
+plain end note. The single signup CTA below the panel is gold with forest text.
+Section indices for hero links are unchanged. These figures remain public
+design-preview copy, not plan or eligibility authority.
+
+### Staff authentication
+
+Staff authentication uses a cream-white `#FAF9F5` page, a restrained crest header,
+and an ivory form surface. Its local DM Sans font and 48px white, 6px-radius inputs
+match the client auth dialog, including password Show/Hide, forest primary action,
+visible labels and inline recovery link. Staff authentication remains email/password;
+customer signup and second-factor flows are not part of this interface.
+
+### Customer checkout
+
+The `/checkout` route owns a compact crest header, a single Review / Payment /
+Account indicator, and a sage order summary to the left of the cream form. On
+mobile the summary precedes the form; quantity, discount and payable USD stay
+visible before the action. The existing mountain still provides the one art cue.
+Use the same cream, forest, sage and DM Sans roles as the overview. Card and Crypto
+are customer choices; processor names remain operational configuration. Verified
+payment and each purchased evaluation's issuance are separate states. The overview's
+creator-code row is compact and expandable; discount percentages come from the server.
+
+Client and staff navigation share the cream sidebar, forest active state, line
+icons, collapse control and mobile drawer. The customer menu is Accounts, Purchase
+account, Trader Payouts, Affiliates, Trophy Cabinet, Receipts, Compliance and
+Customer Support. Trading Terminal and Merch Store are omitted from customer
+navigation. The staff menu is Weekly Puzzle, Newsletter,
+Coupons, Tickets, Traders, Trading Accounts, Compliance, Firm Risk/Economics,
+Payouts, Checkout, Affiliates, Staff Accounts, Bug Items and Customer Support.
+Keep this order and show planned destinations while their pages are built.
+Existing routes are reused; a navigation link does not imply a feature is implemented.
+The footer opens a personal account dialog rather than linking the email directly
+to security. Its pixel character uses the saved Certa avatar and the game renderer.
+The dialog shows production username and compliance status, character colour
+editing, and links to compliance, Discord, security and support. Staff see their
+own personal record; customer-only actions open the configured client origin.
+
+Account dialogs use a compact forest tab sidebar on the left and a larger cream
+content panel on the right. Identity stays small above the tabs. Overview opens
+with a welcome, owned account P&L snapshot and session summary; dedicated tabs
+show Session, Compliance, Character, Security, Discord and Support. Mobile keeps
+the bottom sheet, with identity above horizontally scrollable tabs and content
+below. Tabs support arrow keys, Home/End and labelled panels.

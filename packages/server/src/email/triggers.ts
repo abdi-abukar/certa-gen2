@@ -44,3 +44,32 @@ export async function dispatchEmail(event: EmailEvent) {
   const result = await send({ to: context.user.email, message, idempotencyKey: emailIdempotencyKey(event.id, trigger.template, context.user.id) });
   return { ...result, templateId: trigger.template, templateVersion: emailCatalog[trigger.template].version };
 }
+
+/** Verified application challenge owner only. No OTP/body is stored in the outbox. */
+export async function sendLoginChallenge(event:{id:string;user:EmailEvent['user'];data:LoginCodeData}) {
+  const { EmailDeliveryError }=await import('./resend');
+  if(process.env.EMAIL_DELIVERY_MODE!=='live')throw new EmailDeliveryError('disabled');
+  const {emailStore,checked}=await import('./store');
+  const {renderTransactionalEmail}=await import('./editor');
+  const {parseLoginCode}=await import('./schema');
+  const data=parseLoginCode(event.data),context=contextFromUser(event.user),db=emailStore();
+  const template=checked(await db.from('ce_templates').select('revision').eq('id','login_pin').single());
+  const revision=checked(await db.from('ce_revisions').select('copy').eq('template_id','login_pin').eq('revision',template.revision).single());
+  const message=renderTransactionalEmail('login_pin',context,{pin:data.code,expiresInMinutes:String(data.expiresInMinutes)},revision.copy);
+  return createResendDelivery({mode:'live',apiKey:process.env.RESEND_API_KEY,from:process.env.EMAIL_FROM,replyTo:process.env.EMAIL_REPLY_TO})({to:context.user.email,message,idempotencyKey:emailIdempotencyKey(event.id,'login_pin',context.user.id)});
+}
+
+/** Guest mailbox proof before an account exists. Verified signup challenge owner only. */
+export async function sendSignupChallenge(event:{id:string;email:string;data:LoginCodeData}) {
+  const { EmailDeliveryError }=await import('./resend');
+  if(process.env.EMAIL_DELIVERY_MODE!=='live')throw new EmailDeliveryError('disabled');
+  const {emailStore,checked}=await import('./store');
+  const {renderTransactionalEmail}=await import('./editor');
+  const {parseLoginCode,EMAIL_BRAND,emailAddress}=await import('./schema');
+  const data=parseLoginCode(event.data),db=emailStore();
+  const context={brand:EMAIL_BRAND,user:{id:`guest:${event.id}`,email:emailAddress(event.email),displayName:'',firstName:'',username:'',greeting:'there',emailConfirmed:false}};
+  const template=checked(await db.from('ce_templates').select('revision').eq('id','signup_pin').single());
+  const revision=checked(await db.from('ce_revisions').select('copy').eq('template_id','signup_pin').eq('revision',template.revision).single());
+  const message=renderTransactionalEmail('signup_pin',context,{pin:data.code,expiresInMinutes:String(data.expiresInMinutes)},revision.copy);
+  return createResendDelivery({mode:'live',apiKey:process.env.RESEND_API_KEY,from:process.env.EMAIL_FROM,replyTo:process.env.EMAIL_REPLY_TO})({to:context.user.email,message,idempotencyKey:emailIdempotencyKey(event.id,'signup_pin',context.user.id)});
+}

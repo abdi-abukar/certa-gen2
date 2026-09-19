@@ -1,0 +1,9 @@
+.accountMasthead { max-width:1120px; margin-inline:auto; }
+.welcome { display:flex; align-items:center; gap:24px; min-width:0; }
+.copy { min-width:0; }
+.copy .eyebrow { margin:0 0 9px; color:#5b665e; font-size:11px; line-height:1.4; font-weight:650; letter-spacing:1.5px; text-transform:uppercase; }
+.copy .greeting { margin:0; color:#17221b; font-size:clamp(27px,2.45vw,36px); font-weight:650; letter-spacing:-1.2px; line-height:1.17; overflow-wrap:anywhere; text-wrap:balance; }
+.greeting span { color:#234c35; }
+.copy .description { margin:10px 0 0; color:#5b665e; font-size:14px; line-height:1.6; }
+@media(max-width:700px) { .welcome { gap:18px; } .copy .eyebrow { margin-bottom:7px; font-size:10px; } .copy .greeting { font-size:27px; letter-spacing:-.8px; } .copy .description { margin-top:8px; font-size:13px; } }
+@media(max-width:360px) { .welcome { gap:15px; } .copy .greeting { font-size:24px; } }

@@ -1,5 +1,6 @@
 import 'server-only';
 import { allocationResponse } from './allocation-http';
+import { accountActivity, dashboardSnapshot } from './dashboard';
 import { createHash, randomBytes } from 'node:crypto';
 import { principal, authorized, cors, type Principal } from '../request';
 import { TradingStore, tradingStore } from './store';
@@ -14,6 +15,13 @@ export async function tradingResponse(request: Request, segments: string[], staf
     if(request.method==='OPTIONS') return new Response(null,{status:204,headers});
     const who=await principal(request,staff);
     const store=tradingStore(); const path=segments.join('/'); const url=new URL(request.url);
+    if(request.method==='GET'&&path==='launch'&&!staff) {
+      const {data,error}=await store.db.from('ct_accounts').select('id').eq('user_id',who.id).eq('lifecycle','active').limit(1);
+      if(error)throw new TradingError('trading_store_unavailable',503);
+      return json({hasLiveAccount:Boolean(data?.length)},headers);
+    }
+    if(request.method==='GET'&&path==='dashboard') return json(await dashboardSnapshot(store,who.id,url.searchParams.get('cursor')??undefined),headers);
+    if(request.method==='GET'&&segments[0]==='accounts'&&segments.length===3&&segments[2]==='activity') return json(await accountActivity(store,who.id,uuid(segments[1]),url),headers);
     const after=url.searchParams.get('cursor')??undefined; if(after) uuid(after);
     const limit=Math.min(100,Math.max(1,Number(url.searchParams.get('limit'))||50));
     const account=segments[0]==='accounts'&&segments[1]?await ownedAccount(store,uuid(segments[1]),who):null;

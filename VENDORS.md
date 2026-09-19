@@ -1,5 +1,19 @@
 # Vendor registry and health policy
 
+## Local recording dependency
+
+The web app uses `mediabunny` to package encoded VP8 frames into seekable WebM
+downloads. It is a bundled browser library, not a hosted vendor: no credentials,
+HTTP adapter, health probe, telemetry or media upload. Capture requires a user
+gesture and the browser's source permission. The browser owns permission revocation;
+the account shell owns cleanup. The selected source's video is held in memory for
+at most 600 seconds and 128 MiB of encoded frames, evicting whole key-frame groups.
+One export and one preview are allowed at a time; export can temporarily retain an
+additional buffer snapshot and output file. There is no persistent clip storage.
+Errors stop capture but preserve encodable footage for manual saving. No automatic
+retry or automatic capture occurs. Desktop Chromium with Window track processing
+and VP8 WebCodecs support is the initial target; audio and mobile are unsupported.
+
 The staff page is `/vendors` on the admin app (local port 3201). The typed,
 code-owned schema is `packages/server/src/vendors/registry.ts`; no database
 migration is required. Supabase, Resend, Tradara, DocuSeal, Veriff and Discord are registered.
@@ -105,3 +119,17 @@ concurrency/daily budgets and activation. No paid generation has been performed.
 Resend additionally serves newsletter marketing through the content worker, with a
 separate opt-in switch and signature-verified delivery/suppression callbacks. Existing
 auth triggers remain inactive. See `EMAILS.md` and `CONTENT.md`.
+
+## Checkout and email editing migration
+
+Authorize.net, NMI and NOWPayments now have registered internal diagnostics. These
+report activation as unverified and do not make financial calls or claim merchant
+readiness. Charge/webhook keys are projected only into web; staff configuration and
+reconciliation queueing do not expose them. The payment worker endpoint executes
+on web and the canonical external runner needs only its origin/shared secret.
+Provider sandbox verification remains necessary before activation.
+
+Anthropic's existing structured drafting boundary also serves explicit admin email
+copy requests. Only the synthetic template, current copy and staff brief are sent;
+customer records, login codes and delivery payloads are excluded. Draft generation
+does not save, publish, send, or enable a trigger. Human review and Save are separate.

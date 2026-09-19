@@ -1,0 +1,67 @@
+begin;
+insert into auth.users(id) values('ac000000-0000-4000-8000-000000000001'),('ac000000-0000-4000-8000-000000000002');
+insert into public.ct_plans values('commerce-eval','commerce-vendor-eval','commerce-funded',true,true);
+insert into public.cm_products(id,label,price_cents,enabled) values('commerce-eval','Evaluation',15000,true);
+update public.cm_processors set enabled=true;
+insert into public.cm_coupons(code,kind,value,total_limit) values('ONE','percent',20,1),('FREE','percent',100,1);
+do $$ declare u uuid:='ac000000-0000-4000-8000-000000000001';v uuid:='ac000000-0000-4000-8000-000000000002';c jsonb;c2 jsonb;a jsonb;b jsonb;claim jsonb;rev uuid;old_invoice text;evidence jsonb:='{"name":"Fixture Buyer","country":"CA","email":"fixture@example.test","accepted":true,"terms_version":"fixture-v1"}'; begin
+ c:=public.cm_save(u,'commerce-eval',1,null,null,'ONE',evidence);
+ c2:=public.cm_save(u,'commerce-eval',1,null,null,'ONE',evidence);
+ if c->>'id'<>c2->>'id' or c->>'current_revision'<>c2->>'current_revision' then raise exception 'same cart not resumed'; end if;
+ if (select total_cents from public.cm_revisions where id=(c->>'current_revision')::uuid)<>12000 then raise exception 'coupon incorrect'; end if;
+ begin perform public.cm_save(v,'commerce-eval',1,null,null,'ONE',evidence);raise exception 'unexpected success'; exception when raise_exception then if sqlerrm<>'coupon_limit' then raise;end if;end;
+ a:=public.cm_prepare(u,(c->>'id')::uuid,(c->>'current_revision')::uuid,'nmi',1);
+ begin perform public.cm_prepare(v,(c->>'id')::uuid,(c->>'current_revision')::uuid,'nmi',1);raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'not_found' then raise;end if;end;
+ b:=public.cm_prepare(u,(c->>'id')::uuid,(c->>'current_revision')::uuid,'nmi',1);
+ if a->>'id'<>b->>'id' then raise exception 'prepare duplicated';end if;
+ claim:=public.cm_claim(u,(a->>'id')::uuid,1);
+ begin perform public.cm_claim(u,(a->>'id')::uuid,1);raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'payment_pending' then raise;end if;end;
+ begin perform public.cm_cancel(u,(c->>'id')::uuid);raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'payment_pending' then raise;end if;end;
+ perform public.cm_result((a->>'id')::uuid,'unknown',null,12000,'USD',a->>'invoice');
+ begin perform public.cm_save(u,'commerce-eval',1,null,null,null,evidence);raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'payment_pending' then raise;end if;end;
+ begin perform public.cm_result((a->>'id')::uuid,'paid','provider-first',11999,'USD',a->>'invoice');raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'provider_mismatch' then raise;end if;end;
+ begin perform public.cm_result((a->>'id')::uuid,'paid','provider-first',null,'USD',a->>'invoice');raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'provider_mismatch' then raise;end if;end;
+ perform public.cm_result((a->>'id')::uuid,'declined','decline-first',12000,'USD',a->>'invoice');old_invoice:=a->>'invoice';
+ b:=public.cm_prepare(u,(c->>'id')::uuid,(c->>'current_revision')::uuid,'nmi',1);
+ if old_invoice=b->>'invoice' then raise exception 'decline reused invoice';end if;
+ perform public.cm_claim(u,(b->>'id')::uuid,1);
+ perform public.cm_result((b->>'id')::uuid,'paid','provider-paid',12000,'USD',b->>'invoice');
+ perform public.cm_result((b->>'id')::uuid,'paid','provider-paid',12000,'USD',b->>'invoice');
+ if (select count(*) from public.ct_entitlements where user_id=u and origin='purchase')<>1 then raise exception 'fulfillment duplicated';end if;
+ if (select count(*) from public.ce_outbox where event_id='checkout:'||(c->>'id')||':paid')<>1 then raise exception 'receipt missing or duplicated';end if;
+ if not exists(select 1 from public.cm_coupon_holds where checkout_id=(c->>'id')::uuid and state='used') then raise exception 'coupon not consumed';end if;
+ begin update public.cm_revisions set total_cents=1 where id=(c->>'current_revision')::uuid;raise exception 'unexpected success';exception when raise_exception then if sqlerrm<>'immutable_history' then raise;end if;end;
+ -- Zero-price purchases require no enabled processor and create the same canonical entitlement.
+ c2:=public.cm_save(v,'commerce-eval',1,null,null,'FREE',evidence||'{"email":"second@example.test"}');
+ update public.cm_processors set enabled=false;
+ a:=public.cm_prepare(v,(c2->>'id')::uuid,(c2->>'current_revision')::uuid,'nmi',1);
+ perform public.cm_claim(v,(a->>'id')::uuid,1);
+ perform public.cm_result((a->>'id')::uuid,'paid','free:'||(a->>'invoice'),0,'USD',a->>'invoice');
+ if (select count(*) from public.ct_entitlements where user_id=v and origin='purchase')<>1 then raise exception 'free fulfillment failed';end if;
+ if (select count(*) from public.cm_checkouts where user_id=u and state in ('open','pending'))<>0 then raise exception 'paid checkout stayed active';end if;
+end $$;
+insert into auth.users(id) values('ac000000-0000-4000-8000-000000000003');
+insert into public.tk_pools(id,title,mode,per_user,quantity,state,config,created_by) values('ac000000-0000-4000-8000-000000000004','Commerce fixture','individual',1,1,'active','{}','ac000000-0000-4000-8000-000000000003');
+insert into public.tk_tickets(id,pool_id,position,title,prize,user_id,claimed_at,revealed_at) values('ac000000-0000-4000-8000-000000000005','ac000000-0000-4000-8000-000000000004',1,'Free evaluation','{"kind":"percentage_off","value":100}','ac000000-0000-4000-8000-000000000003',now(),now());
+do $$ declare u uuid:='ac000000-0000-4000-8000-000000000003';t uuid:='ac000000-0000-4000-8000-000000000005';c jsonb;a jsonb;begin
+ c:=public.cm_save(u,'commerce-eval',1,t,null,null,'{"name":"Ticket Buyer","country":"CA","email":"ticket@example.test","accepted":true,"terms_version":"fixture-v1"}');
+ a:=public.cm_prepare(u,(c->>'id')::uuid,(c->>'current_revision')::uuid,'nmi',1);
+ perform public.cm_claim(u,(a->>'id')::uuid,1);
+ begin perform public.tk_checkout(u,t,(c->>'id')::uuid,'release');raise exception 'unexpected release';exception when raise_exception then if sqlerrm<>'ticket_held' then raise;end if;end;
+ perform public.cm_result((a->>'id')::uuid,'paid','free:'||(a->>'invoice'),0,'USD',a->>'invoice');
+ if not exists(select 1 from public.tk_tickets where id=t and used_at is not null) then raise exception 'ticket not consumed';end if;
+ if (select count(*) from public.ct_entitlements where user_id=u)<>1 then raise exception 'ticket failed fulfillment';end if;
+end $$;
+insert into auth.users(id) values('ac000000-0000-4000-8000-000000000006'),('ac000000-0000-4000-8000-000000000007');
+insert into public.cm_coupons(code,kind,value,email) values('ALIASES','percent',10,'f.ixture+target@googlemail.com');
+select public.cm_save('ac000000-0000-4000-8000-000000000006','commerce-eval',1,null,null,'ALIASES','{"name":"Alias One","country":"CA","email":"fi.xture+one@gmail.com","accepted":true,"terms_version":"fixture"}');
+do $$ begin
+ begin perform public.cm_save('ac000000-0000-4000-8000-000000000007','commerce-eval',1,null,null,'ALIASES','{"name":"Alias Two","country":"CA","email":"fixture+two@googlemail.com","accepted":true,"terms_version":"fixture"}');raise exception 'alias bypass';exception when raise_exception then if sqlerrm<>'coupon_limit' then raise;end if;end;
+end $$;
+set local role authenticated;
+do $$ begin
+ begin perform * from public.cm_checkouts;raise exception 'unexpected read';exception when insufficient_privilege then null;end;
+ begin perform public.cm_save('ac000000-0000-4000-8000-000000000001','commerce-eval',1);raise exception 'unexpected rpc';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+rollback;
